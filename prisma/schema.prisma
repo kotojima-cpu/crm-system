@@ -1,0 +1,103 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  loginId      String   @unique @map("login_id")
+  passwordHash String   @map("password_hash")
+  name         String
+  role         String   @default("sales") // "admin" | "sales"
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  customers      Customer[]
+  leaseContracts LeaseContract[]
+  auditLogs      AuditLog[]
+
+  @@map("users")
+}
+
+model Customer {
+  id                    Int      @id @default(autoincrement())
+  companyName           String   @map("company_name")
+  companyNameKana       String?  @map("company_name_kana")
+  zipCode               String?  @map("zip_code")
+  address               String?
+  phone                 String?
+  phoneNumberNormalized String?  @map("phone_number_normalized")
+  fax                   String?
+  contactName           String?  @map("contact_name")
+  contactPhone          String?  @map("contact_phone")
+  contactEmail          String?  @map("contact_email")
+  notes                 String?
+  isDeleted             Boolean  @default(false) @map("is_deleted")
+  createdBy             Int      @map("created_by")
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  creator        User            @relation(fields: [createdBy], references: [id])
+  leaseContracts LeaseContract[]
+
+  @@index([companyName], map: "idx_customers_company_name")
+  @@index([companyNameKana], map: "idx_customers_company_name_kana")
+  @@index([phone], map: "idx_customers_phone")
+  @@index([phoneNumberNormalized], map: "idx_customers_phone_normalized")
+  @@index([contactName], map: "idx_customers_contact_name")
+  @@index([isDeleted], map: "idx_customers_is_deleted")
+  @@map("customers")
+}
+
+model LeaseContract {
+  id                           Int      @id @default(autoincrement())
+  customerId                   Int      @map("customer_id")
+  contractNumber               String?  @unique @map("contract_number")
+  productName                  String   @map("product_name")
+  leaseCompanyName             String?  @map("lease_company_name")
+  contractStartDate            DateTime @map("contract_start_date")
+  contractEndDate              DateTime @map("contract_end_date")
+  contractMonths               Int      @map("contract_months")
+  monthlyFee                   Int?     @map("monthly_fee") // 月額リース料（円）
+  billingBaseDay               Int?     @map("billing_base_day") // 請求基準日（1〜28）
+  contractStatus               String   @default("active") @map("contract_status") // "active" | "expiring_soon" | "expired" | "cancelled"
+  remainingCountCached         Int?     @map("remaining_count_cached") // バッチ更新用キャッシュ
+  manualOverrideRemainingCount Int?     @map("manual_override_remaining_count") // 手動上書き用
+  notes                        String?
+  createdBy                    Int      @map("created_by")
+  createdAt                    DateTime @default(now()) @map("created_at")
+  updatedAt                    DateTime @updatedAt @map("updated_at")
+
+  customer Customer @relation(fields: [customerId], references: [id])
+  creator  User     @relation(fields: [createdBy], references: [id])
+
+  @@index([customerId], map: "idx_contracts_customer_id")
+  @@index([contractStatus], map: "idx_contracts_status")
+  @@index([contractStartDate], map: "idx_contracts_start_date")
+  @@index([contractEndDate], map: "idx_contracts_end_date")
+  @@map("lease_contracts")
+}
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int?     @map("user_id")
+  action    String   // "login" | "create" | "update" | "delete"
+  tableName String   @map("table_name")
+  recordId  Int?     @map("record_id")
+  oldValues String?  @map("old_values") // JSON文字列として保存
+  newValues String?  @map("new_values") // JSON文字列として保存
+  ipAddress String?  @map("ip_address")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([userId], map: "idx_audit_logs_user_id")
+  @@index([tableName], map: "idx_audit_logs_table_name")
+  @@index([createdAt], map: "idx_audit_logs_created_at")
+  @@map("audit_logs")
+}

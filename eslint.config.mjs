@@ -1,0 +1,20 @@
+import nextConfig from "eslint-config-next";
+import coreWebVitals from "eslint-config-next/core-web-vitals";
+import typescript from "eslint-config-next/typescript";
+
+const config = [
+  ...nextConfig,
+  ...coreWebVitals,
+  ...typescript,
+  {
+    ignores: [
+      "node_modules/",
+      ".next/",
+      "prisma/",
+      "public/sw.js",
+      "scripts/",
+    ],
+  },
+];
+
+export default config;

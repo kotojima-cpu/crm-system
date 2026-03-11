@@ -1,0 +1,58 @@
+# ==============================================
+# OA顧客管理システム — Netlify 設定
+# ==============================================
+# Next.js アプリを Netlify でホストする設定。
+# @netlify/plugin-nextjs が自動的に Next.js を検出するため
+# publish ディレクトリの指定は不要。
+#
+# 環境変数は Netlify UI で設定すること（このファイルに秘密情報を書かない）。
+
+[build]
+  command = "npm run build:netlify"
+  publish = ".next"
+
+# -----------------------------------------------
+# Branch deploy: staging ブランチ → テスト版固定URL
+# -----------------------------------------------
+[context.staging]
+  command = "npm run build:netlify"
+
+[context.staging.environment]
+  APP_ENV = "staging"
+
+# -----------------------------------------------
+# Deploy Preview: PR ごとのプレビュー環境
+# -----------------------------------------------
+[context.deploy-preview]
+  command = "npm run build:netlify"
+
+[context.deploy-preview.environment]
+  APP_ENV = "preview"
+
+# -----------------------------------------------
+# Production: main ブランチ → 本番
+# -----------------------------------------------
+[context.production]
+  command = "npm run build:netlify"
+
+[context.production.environment]
+  APP_ENV = "production"
+
+# -----------------------------------------------
+# ヘッダー: PWA 関連ファイルのキャッシュ制御
+# -----------------------------------------------
+[[headers]]
+  for = "/manifest.json"
+  [headers.values]
+    Cache-Control = "public, max-age=3600"
+
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+    Service-Worker-Allowed = "/"
+
+[[headers]]
+  for = "/icons/*"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"
