@@ -1,18 +1,20 @@
 -- CreateTable
 CREATE TABLE "users" (
-    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "id" SERIAL NOT NULL,
     "login_id" TEXT NOT NULL,
     "password_hash" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "role" TEXT NOT NULL DEFAULT 'sales',
     "is_active" BOOLEAN NOT NULL DEFAULT true,
-    "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" DATETIME NOT NULL
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "users_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "customers" (
-    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "id" SERIAL NOT NULL,
     "company_name" TEXT NOT NULL,
     "company_name_kana" TEXT,
     "zip_code" TEXT,
@@ -26,20 +28,21 @@ CREATE TABLE "customers" (
     "notes" TEXT,
     "is_deleted" BOOLEAN NOT NULL DEFAULT false,
     "created_by" INTEGER NOT NULL,
-    "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" DATETIME NOT NULL,
-    CONSTRAINT "customers_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "users" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "customers_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "lease_contracts" (
-    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "id" SERIAL NOT NULL,
     "customer_id" INTEGER NOT NULL,
     "contract_number" TEXT,
     "product_name" TEXT NOT NULL,
     "lease_company_name" TEXT,
-    "contract_start_date" DATETIME NOT NULL,
-    "contract_end_date" DATETIME NOT NULL,
+    "contract_start_date" TIMESTAMP(3) NOT NULL,
+    "contract_end_date" TIMESTAMP(3) NOT NULL,
     "contract_months" INTEGER NOT NULL,
     "monthly_fee" INTEGER,
     "billing_base_day" INTEGER,
@@ -48,15 +51,15 @@ CREATE TABLE "lease_contracts" (
     "manual_override_remaining_count" INTEGER,
     "notes" TEXT,
     "created_by" INTEGER NOT NULL,
-    "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" DATETIME NOT NULL,
-    CONSTRAINT "lease_contracts_customer_id_fkey" FOREIGN KEY ("customer_id") REFERENCES "customers" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT "lease_contracts_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "users" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "lease_contracts_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "audit_logs" (
-    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "id" SERIAL NOT NULL,
     "user_id" INTEGER,
     "action" TEXT NOT NULL,
     "table_name" TEXT NOT NULL,
@@ -64,8 +67,9 @@ CREATE TABLE "audit_logs" (
     "old_values" TEXT,
     "new_values" TEXT,
     "ip_address" TEXT,
-    "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT "audit_logs_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users" ("id") ON DELETE SET NULL ON UPDATE CASCADE
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "audit_logs_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -112,3 +116,15 @@ CREATE INDEX "idx_audit_logs_table_name" ON "audit_logs"("table_name");
 
 -- CreateIndex
 CREATE INDEX "idx_audit_logs_created_at" ON "audit_logs"("created_at");
+
+-- AddForeignKey
+ALTER TABLE "customers" ADD CONSTRAINT "customers_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "lease_contracts" ADD CONSTRAINT "lease_contracts_customer_id_fkey" FOREIGN KEY ("customer_id") REFERENCES "customers"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "lease_contracts" ADD CONSTRAINT "lease_contracts_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "audit_logs" ADD CONSTRAINT "audit_logs_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
