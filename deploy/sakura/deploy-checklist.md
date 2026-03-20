@@ -41,24 +41,17 @@ sudo apt install -y curl
 
 ## VPS 2台目 (DB) の準備
 
-### PostgreSQL のインストール
+**詳細手順は [`db-server-setup.md`](db-server-setup.md) を参照。**
 
-```bash
-sudo apt update
-sudo apt install -y postgresql postgresql-contrib
-
-# DB / ユーザー作成
-sudo -u postgres psql <<'EOF'
-CREATE USER oa_user WITH PASSWORD '【安全なパスワード】';
-CREATE DATABASE oadb OWNER oa_user;
-EOF
-
-# 外部接続を許可 (VPS 1台目の IP のみ)
-# /etc/postgresql/*/main/postgresql.conf:
-#   listen_addresses = '*'
-# /etc/postgresql/*/main/pg_hba.conf:
-#   host oadb oa_user 【VPS1のIP】/32 scram-sha-256
-```
+概要:
+- [ ] PostgreSQL 16 をインストール
+- [ ] DB `oadb` / ユーザー `oa_user` を作成
+- [ ] `listen_addresses` を設定
+- [ ] `pg_hba.conf` で App VPS の IP のみ許可
+- [ ] ファイアウォール (ufw) でポート 5432 を App VPS の IP のみ許可
+- [ ] SSL の有無を判断して設定
+- [ ] App VPS から `psql` で接続確認
+- [ ] バックアップ cron を設定
 
 ---
 
