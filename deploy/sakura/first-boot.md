@@ -50,16 +50,75 @@ docker compose up -d app
 
 ---
 
-## 3. 初期データの投入 (シード)
+## 3. 初期ユーザーの作成
 
-マイグレーション完了後、コンテナの中でシードを実行する:
+マイグレーション完了後、**ホスト側** (VPS の OS) から初期ユーザーを作成する。
+
+> **注意:** `prisma/seed.ts` はセキュリティ上コンテナイメージに含めていない。
+> ホスト側に Node.js がない場合は、コンテナ内の Prisma CLI で直接 SQL を実行する。
+
+### 方法 A: ホスト側で seed を実行 (Node.js がある場合)
 
 ```bash
-docker compose exec app node node_modules/prisma/build/index.js db seed
+cd /opt/oa-system
+
+# 依存インストール (初回のみ)
+npm ci
+
+# DATABASE_URL をセットしてシードを実行
+export DATABASE_URL="postgresql://oa_user:【パスワード】@【DB_VPS_IP】:5432/oadb"
+npx tsx prisma/seed.ts
 ```
 
-シード完了後、`OUTBOX_POLL_LOGIN_ID` / `OUTBOX_POLL_PASSWORD` に設定するユーザーの
-ログインID / パスワードを確認する (シードスクリプトの初期値を参照)。
+### 方法 B: コンテナ内で SQL を直接実行 (Node.js 不要)
+
+```bash
+cd /opt/oa-system/deploy/sakura
+
+# bcrypt ハッシュを生成 (コンテナ内 Node.js を利用)
+HASH=$(docker compose exec -T app node -e \
+  "require('bcryptjs').hash('【パスワード】',12).then(h=>process.stdout.write(h))")
+
+# Tenant を作成
+docker compose exec -T app node node_modules/prisma/build/index.js db execute \
+  --datasource-url "$DATABASE_URL" \
+  --stdin <<EOF
+INSERT INTO tenants (name, status, created_at, updated_at)
+VALUES ('デフォルトテナント', 'active', NOW(), NOW())
+ON CONFLICT DO NOTHING;
+EOF
+
+# platform_admin ユーザーを作成
+docker compose exec -T app node node_modules/prisma/build/index.js db execute \
+  --datasource-url "$DATABASE_URL" \
+  --stdin <<EOF
+INSERT INTO users (tenant_id, login_id, password_hash, name, role, is_active, created_at, updated_at)
+VALUES (
+  (SELECT id FROM tenants LIMIT 1),
+  'platform_admin',
+  '${HASH}',
+  'プラットフォーム管理者',
+  'platform_admin',
+  true,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (login_id) DO NOTHING;
+EOF
+```
+
+### 作成後の確認
+
+```bash
+# .env に platform_admin の認証情報をセット
+nano /opt/oa-system/deploy/sakura/.env
+# OUTBOX_POLL_LOGIN_ID=platform_admin
+# OUTBOX_POLL_PASSWORD=【上で設定したパスワード】
+```
+
+> **既存の seed.ts は `admin` (role: admin) と `sales01` (role: sales) のみ作成する。**
+> outbox ポーリングには `platform_admin` ロールが必要なため、
+> 上記いずれかの方法で明示的に作成すること。
 
 ---
 

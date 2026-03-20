@@ -119,12 +119,15 @@ curl -s http://127.0.0.1:3000/api/health
 ## Nginx の設定
 
 ```bash
-# 設定ファイルを配置
+# 設定ファイルを配置 (HTTP のみの初期設定)
 sudo cp /opt/oa-system/deploy/sakura/nginx.conf.example \
         /etc/nginx/sites-available/oa-system
 
 # ドメイン名を実際の値に編集 (app.itf-oa.com の場合は変更不要)
 # sudo nano /etc/nginx/sites-available/oa-system
+
+# デフォルトサイトを無効化 (競合防止)
+sudo rm -f /etc/nginx/sites-enabled/default
 
 # 有効化
 sudo ln -s /etc/nginx/sites-available/oa-system \
@@ -132,9 +135,18 @@ sudo ln -s /etc/nginx/sites-available/oa-system \
 sudo nginx -t
 sudo systemctl reload nginx
 
-# Let's Encrypt 証明書の取得
+# HTTP でアプリにアクセスできることを確認
+curl -s http://localhost/api/health
+# → {"status":"ok"} が返ればOK
+
+# Let's Encrypt 証明書の取得 (certbot が HTTPS 設定を自動追記する)
 sudo apt install -y certbot python3-certbot-nginx
 sudo certbot --nginx -d app.itf-oa.com
+
+# certbot 完了後、nginx.conf.example 末尾のコメントにある
+# セキュリティヘッダーを HTTPS server ブロック内に追記する
+sudo nano /etc/nginx/sites-available/oa-system
+sudo nginx -t && sudo systemctl reload nginx
 ```
 
 ---

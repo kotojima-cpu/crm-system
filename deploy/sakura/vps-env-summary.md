@@ -9,8 +9,9 @@
 | `DATABASE_URL` | `postgresql://oa_user:【パスワード】@【DB VPS IP】:5432/oadb?sslmode=require` | DB VPS を構築後に確定 |
 | `NEXTAUTH_SECRET` | (ランダム文字列) | `openssl rand -base64 32` で生成 |
 | `NEXTAUTH_URL` | `https://app.itf-oa.com` | ドメインが確定したら設定 |
-| `OUTBOX_POLL_LOGIN_ID` | `platform_admin` のログインID | DB シード後に確認 |
-| `OUTBOX_POLL_PASSWORD` | `platform_admin` のパスワード | DB シード後に確認 |
+| `OUTBOX_POLL_LOGIN_ID` | `platform_admin` のログインID | 初期ユーザー作成後に確認 (first-boot.md 参照) |
+| `OUTBOX_POLL_PASSWORD` | `platform_admin` のパスワード | 初期ユーザー作成後に確認 (first-boot.md 参照) |
+| `APP_URL` | `https://app.itf-oa.com` | outbox-poll.sh がアクセスする URL |
 
 ---
 

@@ -6,49 +6,19 @@
 #                    /etc/nginx/sites-enabled/oa-system
 #         sudo nginx -t && sudo systemctl reload nginx
 #
-# Let's Encrypt 証明書の取得:
-#   sudo apt install certbot python3-certbot-nginx
-#   sudo certbot --nginx -d app.itf-oa.com
-#   (取得後、certbot が ssl_certificate 等を自動追記する)
+# 初回セットアップ手順:
+#   1. このファイルをそのまま配置して nginx -t && systemctl reload nginx
+#   2. sudo certbot --nginx -d app.itf-oa.com
+#      → certbot が自動で HTTPS リダイレクト・証明書パス・SSL 設定を追記する
+#   3. certbot 完了後、下記の「certbot 完了後に手動追加」セクションの
+#      セキュリティヘッダーを HTTPS server ブロック内に追記する
 # ============================================================
 
-# HTTP → HTTPS リダイレクト
+# HTTP — 初回は certbot がここを書き換えて HTTPS リダイレクトを追加する
 server {
     listen 80;
     listen [::]:80;
     server_name app.itf-oa.com;
-
-    # Let's Encrypt の ACME チャレンジは通す
-    location /.well-known/acme-challenge/ {
-        root /var/www/certbot;
-    }
-
-    location / {
-        return 301 https://$host$request_uri;
-    }
-}
-
-# HTTPS 本体
-server {
-    listen 443 ssl;
-    listen [::]:443 ssl;
-    server_name app.itf-oa.com;
-
-    # ----------------------------------------------------------
-    # TLS 証明書 (Let's Encrypt / certbot が自動設定)
-    # ----------------------------------------------------------
-    ssl_certificate     /etc/letsencrypt/live/app.itf-oa.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/app.itf-oa.com/privkey.pem;
-    include             /etc/letsencrypt/options-ssl-nginx.conf;
-    ssl_dhparam         /etc/letsencrypt/ssl-dhparams.pem;
-
-    # ----------------------------------------------------------
-    # セキュリティヘッダー
-    # ----------------------------------------------------------
-    add_header Strict-Transport-Security "max-age=63072000; includeSubDomains" always;
-    add_header X-Content-Type-Options    nosniff always;
-    add_header X-Frame-Options           SAMEORIGIN always;
-    add_header Referrer-Policy           "strict-origin-when-cross-origin" always;
 
     # ----------------------------------------------------------
     # ログ
@@ -62,7 +32,7 @@ server {
     client_max_body_size 10m;
 
     # ----------------------------------------------------------
-    # ヘルスチェック (ECS ヘルスチェックと互換)
+    # ヘルスチェック — ログ抑制
     # ----------------------------------------------------------
     location = /api/health {
         proxy_pass         http://127.0.0.1:3000;
@@ -95,7 +65,7 @@ server {
         proxy_pass         http://127.0.0.1:3000;
         proxy_http_version 1.1;
 
-        # WebSocket 対応 (Next.js HMR / 将来の用途)
+        # WebSocket 対応
         proxy_set_header   Upgrade           $http_upgrade;
         proxy_set_header   Connection        "upgrade";
 
@@ -110,3 +80,17 @@ server {
         proxy_read_timeout 60s;
     }
 }
+
+# ============================================================
+# certbot 完了後に手動追加:
+#
+# certbot が生成した HTTPS server ブロック内に
+# 以下のセキュリティヘッダーを追記してください。
+#
+#   add_header Strict-Transport-Security "max-age=63072000; includeSubDomains" always;
+#   add_header X-Content-Type-Options    nosniff always;
+#   add_header X-Frame-Options           SAMEORIGIN always;
+#   add_header Referrer-Policy           "strict-origin-when-cross-origin" always;
+#
+# 追記後: sudo nginx -t && sudo systemctl reload nginx
+# ============================================================
