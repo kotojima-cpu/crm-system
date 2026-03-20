@@ -11,6 +11,9 @@ type ContractData = {
   contractEndDate: string;
   contractMonths: string;
   monthlyFee: string;
+  counterBaseFee: string;
+  monoCounterRate: string;
+  colorCounterRate: string;
   billingBaseDay: string;
   notes: string;
 };
@@ -31,6 +34,9 @@ const emptyData: ContractData = {
   contractEndDate: "",
   contractMonths: "",
   monthlyFee: "",
+  counterBaseFee: "",
+  monoCounterRate: "",
+  colorCounterRate: "",
   billingBaseDay: "",
   notes: "",
 };
@@ -63,6 +69,12 @@ export function ContractForm({ mode, customerId, customerName, contractId, initi
     }
     if (data.monthlyFee && Number(data.monthlyFee) < 0)
       newErrors.monthlyFee = "0以上の金額を入力してください";
+    if (data.counterBaseFee && Number(data.counterBaseFee) < 0)
+      newErrors.counterBaseFee = "0以上の金額を入力してください";
+    if (data.monoCounterRate && Number(data.monoCounterRate) < 0)
+      newErrors.monoCounterRate = "0以上の金額を入力してください";
+    if (data.colorCounterRate && Number(data.colorCounterRate) < 0)
+      newErrors.colorCounterRate = "0以上の金額を入力してください";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -83,8 +95,11 @@ export function ContractForm({ mode, customerId, customerName, contractId, initi
       contractStartDate: data.contractStartDate,
       contractEndDate: data.contractEndDate,
       contractMonths: Number(data.contractMonths),
-      monthlyFee: data.monthlyFee ? Number(data.monthlyFee) : null,
-      billingBaseDay: data.billingBaseDay ? Number(data.billingBaseDay) : null,
+      monthlyFee: data.monthlyFee !== "" ? Number(data.monthlyFee) : null,
+      counterBaseFee: data.counterBaseFee !== "" ? Number(data.counterBaseFee) : null,
+      monoCounterRate: data.monoCounterRate !== "" ? Number(data.monoCounterRate) : null,
+      colorCounterRate: data.colorCounterRate !== "" ? Number(data.colorCounterRate) : null,
+      billingBaseDay: data.billingBaseDay !== "" ? Number(data.billingBaseDay) : null,
       contractNumber: data.contractNumber.trim() || null,
       notes: data.notes.trim() || null,
     };
@@ -160,6 +175,21 @@ export function ContractForm({ mode, customerId, customerName, contractId, initi
           <Field label="更新基準日" error={errors.billingBaseDay}>
             <input type="number" value={data.billingBaseDay} onChange={set("billingBaseDay")}
               min="1" max="28" placeholder="1" className={inputClass(errors.billingBaseDay)} />
+          </Field>
+        </div>
+
+        <div className="grid grid-cols-3 gap-4">
+          <Field label="カウンター基本料金（円）" error={errors.counterBaseFee}>
+            <input type="number" value={data.counterBaseFee} onChange={set("counterBaseFee")}
+              min="0" step="0.01" placeholder="3000" className={inputClass(errors.counterBaseFee)} />
+          </Field>
+          <Field label="モノクロ単価（円/枚）" error={errors.monoCounterRate}>
+            <input type="number" value={data.monoCounterRate} onChange={set("monoCounterRate")}
+              min="0" step="0.01" placeholder="0.8" className={inputClass(errors.monoCounterRate)} />
+          </Field>
+          <Field label="カラー単価（円/枚）" error={errors.colorCounterRate}>
+            <input type="number" value={data.colorCounterRate} onChange={set("colorCounterRate")}
+              min="0" step="0.01" placeholder="15" className={inputClass(errors.colorCounterRate)} />
           </Field>
         </div>
 

@@ -46,6 +46,9 @@ export default async function EditContractPage({ params }: Props) {
             contractEndDate: toDateString(contract.contractEndDate),
             contractMonths: String(contract.contractMonths),
             monthlyFee: contract.monthlyFee ? String(Number(contract.monthlyFee)) : "",
+            counterBaseFee: contract.counterBaseFee != null ? String(contract.counterBaseFee) : "",
+            monoCounterRate: contract.monoCounterRate != null ? String(contract.monoCounterRate) : "",
+            colorCounterRate: contract.colorCounterRate != null ? String(contract.colorCounterRate) : "",
             billingBaseDay: contract.billingBaseDay ? String(contract.billingBaseDay) : "",
             notes: contract.notes || "",
           }}

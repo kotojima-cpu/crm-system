@@ -7,25 +7,44 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Tenant {
+  id        Int      @id @default(autoincrement())
+  name      String
+  status    String   @default("active") // "active" | "suspended"
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  users       User[]
+  customers   Customer[]
+  invitations TenantUserInvitation[]
+
+  @@index([status], map: "idx_tenants_status")
+  @@map("tenants")
+}
+
 model User {
   id           Int      @id @default(autoincrement())
+  tenantId     Int?     @map("tenant_id")
   loginId      String   @unique @map("login_id")
   passwordHash String   @map("password_hash")
   name         String
-  role         String   @default("sales") // "admin" | "sales"
+  role         String   @default("sales") // "platform_admin" | "tenant_admin" | "sales"
   isActive     Boolean  @default(true) @map("is_active")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
+  tenant         Tenant?         @relation(fields: [tenantId], references: [id])
   customers      Customer[]
   leaseContracts LeaseContract[]
   auditLogs      AuditLog[]
 
+  @@index([tenantId], map: "idx_users_tenant_id")
   @@map("users")
 }
 
 model Customer {
   id                    Int      @id @default(autoincrement())
+  tenantId              Int      @map("tenant_id")
   companyName           String   @map("company_name")
   companyNameKana       String?  @map("company_name_kana")
   zipCode               String?  @map("zip_code")
@@ -42,9 +61,11 @@ model Customer {
   createdAt             DateTime @default(now()) @map("created_at")
   updatedAt             DateTime @updatedAt @map("updated_at")
 
+  tenant         Tenant          @relation(fields: [tenantId], references: [id])
   creator        User            @relation(fields: [createdBy], references: [id])
   leaseContracts LeaseContract[]
 
+  @@index([tenantId], map: "idx_customers_tenant_id")
   @@index([companyName], map: "idx_customers_company_name")
   @@index([companyNameKana], map: "idx_customers_company_name_kana")
   @@index([phone], map: "idx_customers_phone")
@@ -56,6 +77,7 @@ model Customer {
 
 model LeaseContract {
   id                           Int      @id @default(autoincrement())
+  tenantId                     Int      @map("tenant_id")
   customerId                   Int      @map("customer_id")
   contractNumber               String?  @unique @map("contract_number")
   productName                  String   @map("product_name")
@@ -63,19 +85,24 @@ model LeaseContract {
   contractStartDate            DateTime @map("contract_start_date")
   contractEndDate              DateTime @map("contract_end_date")
   contractMonths               Int      @map("contract_months")
-  monthlyFee                   Int?     @map("monthly_fee") // 月額リース料（円）
-  billingBaseDay               Int?     @map("billing_base_day") // 請求基準日（1〜28）
-  contractStatus               String   @default("active") @map("contract_status") // "active" | "expiring_soon" | "expired" | "cancelled"
-  remainingCountCached         Int?     @map("remaining_count_cached") // バッチ更新用キャッシュ
-  manualOverrideRemainingCount Int?     @map("manual_override_remaining_count") // 手動上書き用
+  monthlyFee                   Int?     @map("monthly_fee")
+  counterBaseFee               Decimal? @map("counter_base_fee") @db.Decimal(10, 2)
+  monoCounterRate              Decimal? @map("mono_counter_rate") @db.Decimal(10, 2)
+  colorCounterRate             Decimal? @map("color_counter_rate") @db.Decimal(10, 2)
+  billingBaseDay               Int?     @map("billing_base_day")
+  contractStatus               String   @default("active") @map("contract_status")
+  remainingCountCached         Int?     @map("remaining_count_cached")
+  manualOverrideRemainingCount Int?     @map("manual_override_remaining_count")
   notes                        String?
   createdBy                    Int      @map("created_by")
   createdAt                    DateTime @default(now()) @map("created_at")
   updatedAt                    DateTime @updatedAt @map("updated_at")
 
-  customer Customer @relation(fields: [customerId], references: [id])
-  creator  User     @relation(fields: [createdBy], references: [id])
+  customer Customer  @relation(fields: [customerId], references: [id])
+  creator  User      @relation(fields: [createdBy], references: [id])
+  invoices Invoice[]
 
+  @@index([tenantId], map: "idx_contracts_tenant_id")
   @@index([customerId], map: "idx_contracts_customer_id")
   @@index([contractStatus], map: "idx_contracts_status")
   @@index([contractStartDate], map: "idx_contracts_start_date")
@@ -83,14 +110,82 @@ model LeaseContract {
   @@map("lease_contracts")
 }
 
+model Invoice {
+  id            Int       @id @default(autoincrement())
+  tenantId      Int       @map("tenant_id")
+  contractId    Int       @map("contract_id")
+  customerId    Int       @map("customer_id")
+  periodStart   DateTime  @map("period_start")
+  periodEnd     DateTime  @map("period_end")
+  amount        Int       // 請求金額（円）
+  status        String    @default("draft") // "draft" | "confirmed" | "cancelled"
+  cancelReason  String?   @map("cancel_reason")
+  confirmedAt   DateTime? @map("confirmed_at")
+  cancelledAt   DateTime? @map("cancelled_at")
+  createdBy     Int       @map("created_by")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  contract LeaseContract @relation(fields: [contractId], references: [id])
+
+  @@unique([contractId, periodStart, periodEnd], map: "uq_invoice_contract_period")
+  @@index([tenantId], map: "idx_invoices_tenant_id")
+  @@index([contractId], map: "idx_invoices_contract_id")
+  @@index([customerId], map: "idx_invoices_customer_id")
+  @@index([status], map: "idx_invoices_status")
+  @@map("invoices")
+}
+
+model TenantUserInvitation {
+  id          Int      @id @default(autoincrement())
+  tenantId    Int      @map("tenant_id")
+  email       String
+  role        String   // "tenant_admin" | "sales"
+  token       String   @unique @default(uuid())
+  status      String   @default("pending") // "pending" | "accepted" | "expired" | "cancelled"
+  invitedBy   Int      @map("invited_by")
+  expiresAt   DateTime @map("expires_at")
+  acceptedAt  DateTime? @map("accepted_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId], map: "idx_invitations_tenant_id")
+  @@index([email], map: "idx_invitations_email")
+  @@index([token], map: "idx_invitations_token")
+  @@index([status], map: "idx_invitations_status")
+  @@map("tenant_user_invitations")
+}
+
+model OutboxEvent {
+  id            Int       @id @default(autoincrement())
+  eventType     String    @map("event_type")
+  executionMode String    @map("execution_mode")
+  status        String    @default("pending") // "pending"|"processing"|"sent"|"failed"|"dead"
+  payloadJson   String    @map("payload_json")
+  availableAt   DateTime  @default(now()) @map("available_at")
+  retryCount    Int       @default(0) @map("retry_count")
+  maxRetries    Int       @default(3) @map("max_retries")
+  lastError     String?   @map("last_error")
+  processedAt   DateTime? @map("processed_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  @@index([status, availableAt], map: "idx_outbox_events_status_available")
+  @@index([eventType], map: "idx_outbox_events_event_type")
+  @@index([createdAt], map: "idx_outbox_events_created_at")
+  @@map("outbox_events")
+}
+
 model AuditLog {
   id        Int      @id @default(autoincrement())
   userId    Int?     @map("user_id")
-  action    String   // "login" | "create" | "update" | "delete"
+  action    String
   tableName String   @map("table_name")
   recordId  Int?     @map("record_id")
-  oldValues String?  @map("old_values") // JSON文字列として保存
-  newValues String?  @map("new_values") // JSON文字列として保存
+  oldValues String?  @map("old_values")
+  newValues String?  @map("new_values")
   ipAddress String?  @map("ip_address")
   createdAt DateTime @default(now()) @map("created_at")
 
@@ -100,4 +195,28 @@ model AuditLog {
   @@index([tableName], map: "idx_audit_logs_table_name")
   @@index([createdAt], map: "idx_audit_logs_created_at")
   @@map("audit_logs")
+}
+
+model PlatformAlertHistory {
+  id         Int      @id @default(autoincrement())
+  alertKey   String   @map("alert_key")
+  channel    String   // "webhook" | "mail"
+  lastSentAt DateTime @map("last_sent_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@unique([alertKey, channel])
+  @@map("platform_alert_histories")
+}
+
+model PlatformHealthCheckHistory {
+  id                   Int      @id @default(autoincrement())
+  summaryJson          String   @map("summary_json")
+  alertCodesJson       String   @map("alert_codes_json")
+  metricsPublished     Boolean  @map("metrics_published")
+  notificationsSent    Boolean  @map("notifications_sent")
+  suppressedByCooldown Boolean  @default(false) @map("suppressed_by_cooldown")
+  createdAt            DateTime @default(now()) @map("created_at")
+
+  @@map("platform_health_check_histories")
 }

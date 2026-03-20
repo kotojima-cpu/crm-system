@@ -1,0 +1,24 @@
+# ============================================================
+# outbox-poll.timer — アウトボックスポーリング定期実行タイマー
+#
+# 配置先: /etc/systemd/system/outbox-poll.timer
+#
+# 設定値: 60秒ごとに outbox-poll.service を起動する。
+# ============================================================
+
+[Unit]
+Description=OA System — Outbox Poll Timer (every 60 seconds)
+Requires=outbox-poll.service
+
+[Timer]
+# 起動後 30 秒待ってから最初の実行 (アプリの起動完了を待つ)
+OnBootSec=30s
+
+# 前回の実行開始から 60 秒後に次回実行
+OnUnitActiveSec=60s
+
+# 実行がなかった場合 (VPS 再起動直後など) に溜まった実行をスキップ
+# AccuracySec はデフォルト 1min なのでそのまま
+
+[Install]
+WantedBy=timers.target

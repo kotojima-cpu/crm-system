@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { normalizePhone } from "@/lib/phone";
 import { writeAuditLog } from "@/lib/audit";
-import { getSessionUser, unauthorizedResponse } from "@/lib/session";
+import { getSessionUser } from "@/auth/session";
+import { unauthorizedResponse } from "@/lib/session";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -10,6 +11,12 @@ type RouteContext = { params: Promise<{ id: string }> };
 export async function GET(_request: NextRequest, context: RouteContext) {
   const user = await getSessionUser();
   if (!user) return unauthorizedResponse();
+  if (!user.tenantId) {
+    return NextResponse.json(
+      { error: { code: "FORBIDDEN", message: "テナントが割り当てられていません" } },
+      { status: 403 }
+    );
+  }
 
   const { id } = await context.params;
   const customerId = Number(id);
@@ -21,7 +28,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
   }
 
   const customer = await prisma.customer.findFirst({
-    where: { id: customerId, isDeleted: false },
+    where: { id: customerId, isDeleted: false, tenantId: user.tenantId },
     include: {
       creator: { select: { id: true, name: true } },
       leaseContracts: {
@@ -54,6 +61,12 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 export async function PUT(request: NextRequest, context: RouteContext) {
   const user = await getSessionUser();
   if (!user) return unauthorizedResponse();
+  if (!user.tenantId) {
+    return NextResponse.json(
+      { error: { code: "FORBIDDEN", message: "テナントが割り当てられていません" } },
+      { status: 403 }
+    );
+  }
 
   const { id } = await context.params;
   const customerId = Number(id);
@@ -65,7 +78,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
   }
 
   const existing = await prisma.customer.findFirst({
-    where: { id: customerId, isDeleted: false },
+    where: { id: customerId, isDeleted: false, tenantId: user.tenantId },
   });
   if (!existing) {
     return NextResponse.json(
@@ -143,6 +156,12 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 export async function DELETE(_request: NextRequest, context: RouteContext) {
   const user = await getSessionUser();
   if (!user) return unauthorizedResponse();
+  if (!user.tenantId) {
+    return NextResponse.json(
+      { error: { code: "FORBIDDEN", message: "テナントが割り当てられていません" } },
+      { status: 403 }
+    );
+  }
 
   const { id } = await context.params;
   const customerId = Number(id);
@@ -154,7 +173,7 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
   }
 
   const existing = await prisma.customer.findFirst({
-    where: { id: customerId, isDeleted: false },
+    where: { id: customerId, isDeleted: false, tenantId: user.tenantId },
   });
   if (!existing) {
     return NextResponse.json(

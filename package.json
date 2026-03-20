@@ -11,13 +11,17 @@
     "db:seed": "npx prisma db seed",
     "db:studio": "npx prisma studio",
     "test": "vitest run",
+    "test:ci": "vitest run --pool=vmForks",
     "test:watch": "vitest",
+    "prisma:generate": "prisma generate",
     "build:netlify": "npx prisma generate && npx prisma migrate deploy && npx prisma db seed && next build"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-ses": "^3.1012.0",
+    "@aws-sdk/client-sqs": "^3.1012.0",
     "@prisma/client": "^6.19.2",
     "bcryptjs": "^3.0.3",
     "next": "^16.1.6",

@@ -1,0 +1,93 @@
+# ============================================================
+# OA顧客管理システム — さくらのVPS 用 Docker Compose
+#
+# 構成:
+#   app      — Next.js アプリ (ポート 3000)
+#   postgres — ローカル検証用 PostgreSQL (本番は別VPS を使用)
+#
+# 本番運用:
+#   DATABASE_URL を別VPSのPostgreSQLエンドポイントに設定し、
+#   postgres サービスを停止または profiles: で除外する。
+#
+# 起動方法:
+#   # アプリのみ (本番: DB は別VPS)
+#   docker compose up -d app
+#
+#   # アプリ + ローカルDB (検証時)
+#   docker compose --profile local-db up -d
+# ============================================================
+
+services:
+  # ----------------------------------------------------------
+  # app: Next.js アプリケーション
+  # ----------------------------------------------------------
+  app:
+    build:
+      context: ../../
+      dockerfile: Dockerfile
+    image: oa-system:latest
+    container_name: oa-system-app
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:3000"
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      HOSTNAME: "0.0.0.0"
+    healthcheck:
+      test:
+        - "CMD"
+        - "node"
+        - "-e"
+        - "const h=require('http');h.get('http://localhost:3000/api/health',(r)=>{process.exit(r.statusCode===200?0:1)}).on('error',()=>process.exit(1))"
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s
+    depends_on:
+      postgres:
+        condition: service_healthy
+        required: false
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  # ----------------------------------------------------------
+  # postgres: ローカル検証用 PostgreSQL
+  #
+  # 本番運用では DATABASE_URL を別VPSのエンドポイントに設定し、
+  # このサービスは起動しない。
+  # 起動するには: docker compose --profile local-db up -d
+  # ----------------------------------------------------------
+  postgres:
+    profiles:
+      - local-db
+    image: postgres:15-alpine
+    container_name: oa-system-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: oa_user
+      POSTGRES_PASSWORD: oa_pass
+      POSTGRES_DB: oadb
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U oa_user -d oadb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+volumes:
+  postgres_data:
+    driver: local

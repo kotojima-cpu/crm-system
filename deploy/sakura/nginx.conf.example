@@ -1,0 +1,112 @@
+# ============================================================
+# OA顧客管理システム — Nginx リバースプロキシ設定
+#
+# 配置先: /etc/nginx/sites-available/oa-system
+# 有効化: sudo ln -s /etc/nginx/sites-available/oa-system \
+#                    /etc/nginx/sites-enabled/oa-system
+#         sudo nginx -t && sudo systemctl reload nginx
+#
+# Let's Encrypt 証明書の取得:
+#   sudo apt install certbot python3-certbot-nginx
+#   sudo certbot --nginx -d app.itf-oa.com
+#   (取得後、certbot が ssl_certificate 等を自動追記する)
+# ============================================================
+
+# HTTP → HTTPS リダイレクト
+server {
+    listen 80;
+    listen [::]:80;
+    server_name app.itf-oa.com;
+
+    # Let's Encrypt の ACME チャレンジは通す
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+# HTTPS 本体
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    server_name app.itf-oa.com;
+
+    # ----------------------------------------------------------
+    # TLS 証明書 (Let's Encrypt / certbot が自動設定)
+    # ----------------------------------------------------------
+    ssl_certificate     /etc/letsencrypt/live/app.itf-oa.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/app.itf-oa.com/privkey.pem;
+    include             /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam         /etc/letsencrypt/ssl-dhparams.pem;
+
+    # ----------------------------------------------------------
+    # セキュリティヘッダー
+    # ----------------------------------------------------------
+    add_header Strict-Transport-Security "max-age=63072000; includeSubDomains" always;
+    add_header X-Content-Type-Options    nosniff always;
+    add_header X-Frame-Options           SAMEORIGIN always;
+    add_header Referrer-Policy           "strict-origin-when-cross-origin" always;
+
+    # ----------------------------------------------------------
+    # ログ
+    # ----------------------------------------------------------
+    access_log /var/log/nginx/oa-system-access.log;
+    error_log  /var/log/nginx/oa-system-error.log;
+
+    # ----------------------------------------------------------
+    # アップロードサイズ上限 (必要に応じて調整)
+    # ----------------------------------------------------------
+    client_max_body_size 10m;
+
+    # ----------------------------------------------------------
+    # ヘルスチェック (ECS ヘルスチェックと互換)
+    # ----------------------------------------------------------
+    location = /api/health {
+        proxy_pass         http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header   Host              $host;
+        proxy_set_header   X-Real-IP         $remote_addr;
+        proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto $scheme;
+        proxy_read_timeout 10s;
+        access_log off;
+    }
+
+    # ----------------------------------------------------------
+    # Next.js 静的アセット (_next/static) — キャッシュ強化
+    # ----------------------------------------------------------
+    location /_next/static/ {
+        proxy_pass         http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header   Host              $host;
+        proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto $scheme;
+        expires            1y;
+        add_header         Cache-Control "public, immutable";
+    }
+
+    # ----------------------------------------------------------
+    # すべてのリクエストを Next.js アプリへ転送
+    # ----------------------------------------------------------
+    location / {
+        proxy_pass         http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+
+        # WebSocket 対応 (Next.js HMR / 将来の用途)
+        proxy_set_header   Upgrade           $http_upgrade;
+        proxy_set_header   Connection        "upgrade";
+
+        # プロキシヘッダー
+        proxy_set_header   Host              $host;
+        proxy_set_header   X-Real-IP         $remote_addr;
+        proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto $scheme;
+
+        # バッファ・タイムアウト
+        proxy_buffering    off;
+        proxy_read_timeout 60s;
+    }
+}

@@ -2,12 +2,20 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { normalizePhone } from "@/lib/phone";
 import { writeAuditLog } from "@/lib/audit";
-import { getSessionUser, unauthorizedResponse } from "@/lib/session";
+import { getSessionUser } from "@/auth/session";
+import { unauthorizedResponse } from "@/lib/session";
+import { refreshRemainingCountCache } from "@/lib/contract-cache";
 
 // GET /api/customers — 一覧取得（検索・ページネーション）
 export async function GET(request: NextRequest) {
   const user = await getSessionUser();
   if (!user) return unauthorizedResponse();
+  if (!user.tenantId) {
+    return NextResponse.json(
+      { error: { code: "FORBIDDEN", message: "テナントが割り当てられていません" } },
+      { status: 403 }
+    );
+  }
 
   const { searchParams } = request.nextUrl;
   const page = Math.max(1, Number(searchParams.get("page")) || 1);
@@ -20,7 +28,7 @@ export async function GET(request: NextRequest) {
   const sortOrder = searchParams.get("sortOrder") === "asc" ? "asc" : "desc";
 
   // 検索条件の組み立て
-  const where: Record<string, unknown> = { isDeleted: false };
+  const where: Record<string, unknown> = { isDeleted: false, tenantId: user.tenantId };
   const andConditions: Record<string, unknown>[] = [];
 
   // 汎用検索（顧客名 OR 電話番号 OR 担当者名）
@@ -48,6 +56,30 @@ export async function GET(request: NextRequest) {
     const normalizedPhone = normalizePhone(searchPhone);
     if (normalizedPhone) {
       andConditions.push({ phoneNumberNormalized: { contains: normalizedPhone } });
+    }
+  }
+
+  // リース残回数フィルタ（検索前にキャッシュを最新化して画面表示と一致させる）
+  const remainingMonths = searchParams.get("remainingMonths");
+  const remainingMonthsOp = searchParams.get("remainingMonthsOp") || "lte";
+  if (remainingMonths !== null && remainingMonths !== "") {
+    await refreshRemainingCountCache();
+    const value = Number(remainingMonths);
+    if (!isNaN(value) && value >= 0) {
+      let compareOp: Record<string, number>;
+      switch (remainingMonthsOp) {
+        case "gte": compareOp = { gte: value }; break;
+        case "lte": compareOp = { lte: value }; break;
+        default:    compareOp = { equals: value }; break;
+      }
+      andConditions.push({
+        leaseContracts: {
+          some: {
+            remainingCountCached: compareOp,
+            contractStatus: { not: "cancelled" },
+          },
+        },
+      });
     }
   }
 
@@ -125,8 +157,17 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const dbUser = await prisma.user.findUnique({ where: { id: user.id }, select: { tenantId: true } });
+  if (!dbUser?.tenantId) {
+    return NextResponse.json(
+      { error: { code: "FORBIDDEN", message: "テナントが割り当てられていません" } },
+      { status: 403 }
+    );
+  }
+
   const customer = await prisma.customer.create({
     data: {
+      tenantId: dbUser.tenantId,
       companyName: companyName.trim(),
       companyNameKana: companyNameKana?.trim() || null,
       zipCode: zipCode?.trim() || null,

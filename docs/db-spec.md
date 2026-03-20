@@ -75,6 +75,9 @@ customers 1 ──< N lease_contracts (customer_id)
 | end_date | DATE | NOT NULL | — | 契約終了日 |
 | total_months | INT | NOT NULL | — | 総回数（月数） |
 | monthly_amount | DECIMAL(12,0) | — | NULL | 月額リース料（円） |
+| counter_base_fee | DECIMAL(10,2) | — | NULL | カウンター基本料金（円/月） |
+| mono_counter_rate | DECIMAL(10,2) | — | NULL | モノクロカウンター料金（円/枚、小数対応） |
+| color_counter_rate | DECIMAL(10,2) | — | NULL | カラーカウンター料金（円/枚、小数対応） |
 | status | VARCHAR(20) | NOT NULL | 'active' | 契約ステータス |
 | notes | TEXT | — | NULL | 備考 |
 | created_by | INT | FK → users.id | — | 登録者 |
@@ -232,8 +235,11 @@ model LeaseContract {
   startDate      DateTime  @map("start_date") @db.Date
   endDate        DateTime  @map("end_date") @db.Date
   totalMonths    Int       @map("total_months")
-  monthlyAmount  Decimal?  @map("monthly_amount") @db.Decimal(12, 0)
-  status         String    @default("active") @db.VarChar(20)
+  monthlyAmount    Decimal?  @map("monthly_amount") @db.Decimal(12, 0)
+  counterBaseFee   Decimal?  @map("counter_base_fee") @db.Decimal(10, 2)   // カウンター基本料金（円/月）
+  monoCounterRate  Decimal?  @map("mono_counter_rate") @db.Decimal(10, 2)  // モノクロカウンター料金（円/枚）
+  colorCounterRate Decimal?  @map("color_counter_rate") @db.Decimal(10, 2) // カラーカウンター料金（円/枚）
+  status           String    @default("active") @db.VarChar(20)
   notes          String?
   createdBy      Int       @map("created_by")
   createdAt      DateTime  @default(now()) @map("created_at")

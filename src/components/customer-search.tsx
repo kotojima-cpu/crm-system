@@ -11,6 +11,8 @@ export function CustomerSearch() {
   );
   const [address, setAddress] = useState(searchParams.get("address") || "");
   const [phone, setPhone] = useState(searchParams.get("phone") || "");
+  const [remainingMonths, setRemainingMonths] = useState(searchParams.get("remainingMonths") || "");
+  const [remainingMonthsOp, setRemainingMonthsOp] = useState(searchParams.get("remainingMonthsOp") || "lte");
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,6 +20,10 @@ export function CustomerSearch() {
     if (companyName.trim()) params.set("companyName", companyName.trim());
     if (address.trim()) params.set("address", address.trim());
     if (phone.trim()) params.set("phone", phone.trim());
+    if (remainingMonths.trim()) {
+      params.set("remainingMonths", remainingMonths.trim());
+      params.set("remainingMonthsOp", remainingMonthsOp);
+    }
     params.set("page", "1");
     router.push(`/customers?${params.toString()}`);
   };
@@ -26,10 +32,12 @@ export function CustomerSearch() {
     setCompanyName("");
     setAddress("");
     setPhone("");
+    setRemainingMonths("");
+    setRemainingMonthsOp("lte");
     router.push("/customers");
   };
 
-  const hasFilters = companyName || address || phone;
+  const hasFilters = companyName || address || phone || remainingMonths;
 
   return (
     <form onSubmit={handleSearch} className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
@@ -69,6 +77,32 @@ export function CustomerSearch() {
             placeholder="電話番号で検索（ハイフン可）"
             className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
+        </div>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
+        <div>
+          <label className="block text-xs font-medium text-gray-600 mb-1">
+            リース残回数
+          </label>
+          <div className="flex gap-1">
+            <select
+              value={remainingMonthsOp}
+              onChange={(e) => setRemainingMonthsOp(e.target.value)}
+              className="px-2 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="lte">以下</option>
+              <option value="gte">以上</option>
+              <option value="eq">一致</option>
+            </select>
+            <input
+              type="number"
+              min="0"
+              value={remainingMonths}
+              onChange={(e) => setRemainingMonths(e.target.value)}
+              placeholder="回"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
         </div>
       </div>
       <div className="flex gap-2 mt-3">

@@ -1,0 +1,45 @@
+# ============================================================
+# outbox-poll.service — アウトボックスポーリング実行ユニット
+#
+# 配置先: /etc/systemd/system/outbox-poll.service
+# 有効化: sudo systemctl daemon-reload
+#         sudo systemctl enable outbox-poll.timer
+#         sudo systemctl start outbox-poll.timer
+#
+# このサービスは outbox-poll.timer から呼び出される (直接 start 不要)。
+# 手動実行する場合: sudo systemctl start outbox-poll.service
+#
+# 前提条件:
+#   - /opt/oa-system/deploy/sakura/outbox-poll.sh が配置されていること
+#   - /opt/oa-system/deploy/sakura/.env に以下が設定されていること:
+#       APP_URL
+#       OUTBOX_POLL_LOGIN_ID
+#       OUTBOX_POLL_PASSWORD
+#   - curl がインストールされていること (sudo apt install curl)
+# ============================================================
+
+[Unit]
+Description=OA System — Outbox Poll Cycle
+After=network-online.target
+Wants=network-online.target
+# アプリが起動していない場合は失敗として記録するが、タイマーは継続する
+
+[Service]
+Type=oneshot
+
+# outbox-poll.sh の配置パス
+ExecStart=/bin/sh /opt/oa-system/deploy/sakura/outbox-poll.sh
+
+# 環境変数を .env ファイルから読み込む
+EnvironmentFile=/opt/oa-system/deploy/sakura/.env
+
+# タイムアウト: 1分以内に完了しない場合は強制終了
+TimeoutStartSec=60
+
+# 失敗しても次回のタイマー実行に影響しない
+RemainAfterExit=no
+
+# ログを journald へ出力 (journalctl -u outbox-poll で確認可)
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=outbox-poll

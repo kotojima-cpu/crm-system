@@ -1,0 +1,72 @@
+{
+  "family": "oa-system-staging",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "taskRoleArn":      "arn:aws:iam::{{AWS_ACCOUNT_ID}}:role/oa-system-staging-task-role",
+  "executionRoleArn": "arn:aws:iam::{{AWS_ACCOUNT_ID}}:role/oa-system-staging-execution-role",
+
+  "containerDefinitions": [
+    {
+      "name": "oa-system",
+      "image": "{{AWS_ACCOUNT_ID}}.dkr.ecr.ap-northeast-1.amazonaws.com/oa-system:{{IMAGE_TAG}}",
+      "essential": true,
+
+      "portMappings": [
+        {
+          "containerPort": 3000,
+          "protocol": "tcp"
+        }
+      ],
+
+      "environment": [
+        { "name": "NODE_ENV",                   "value": "production" },
+        { "name": "APP_ENV",                    "value": "staging" },
+        { "name": "INFRASTRUCTURE_MODE",        "value": "aws" },
+        { "name": "AWS_REGION",                 "value": "ap-northeast-1" },
+        { "name": "NEXTAUTH_URL",               "value": "https://stg.itf-oa.com" },
+        { "name": "AWS_SES_FROM",               "value": "noreply@itf-oa.com" },
+        { "name": "AWS_SQS_QUEUE_URL",          "value": "https://sqs.ap-northeast-1.amazonaws.com/{{AWS_ACCOUNT_ID}}/oa-system-staging-outbox" },
+        { "name": "DISABLE_REAL_EMAIL_SEND",    "value": "true" },
+        { "name": "DISABLE_REAL_WEBHOOK_SEND",  "value": "true" },
+        { "name": "ALLOWED_EMAIL_DOMAINS",      "value": "{{ALLOWED_EMAIL_DOMAINS}}" },
+        { "name": "ALLOWED_WEBHOOK_HOSTS",      "value": "{{ALLOWED_WEBHOOK_HOSTS}}" }
+      ],
+
+      "secrets": [
+        {
+          "name":      "DATABASE_URL",
+          "valueFrom": "{{STAGING_DATABASE_URL_SECRET_ARN}}"
+        },
+        {
+          "name":      "NEXTAUTH_SECRET",
+          "valueFrom": "{{STAGING_NEXTAUTH_SECRET_ARN}}"
+        }
+      ],
+
+      "healthCheck": {
+        "command": [
+          "CMD-SHELL",
+          "node -e \"const h=require('http');h.get('http://localhost:3000/api/health',(r)=>{process.exit(0)}).on('error',()=>process.exit(1))\""
+        ],
+        "interval":    30,
+        "timeout":     10,
+        "retries":     3,
+        "startPeriod": 90
+      },
+
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group":         "/ecs/oa-system-staging",
+          "awslogs-region":        "ap-northeast-1",
+          "awslogs-stream-prefix": "ecs",
+          "awslogs-create-group":  "true"
+        }
+      },
+
+      "stopTimeout": 30
+    }
+  ]
+}

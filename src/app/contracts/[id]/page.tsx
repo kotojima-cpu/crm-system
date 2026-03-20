@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Header } from "@/components/header";
 import { DeleteContractButton } from "@/components/delete-contract-button";
 import { PwaHide } from "@/components/pwa-hide";
-import { calculateContractStatus } from "@/lib/contract-utils";
+import { resolveRemainingCount } from "@/lib/contract-utils";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -48,13 +48,14 @@ export default async function ContractDetailPage({ params }: Props) {
 
   if (!contract) notFound();
 
-  const calc = calculateContractStatus({
+  const calc = resolveRemainingCount({
     contractStartDate: contract.contractStartDate,
     contractMonths: contract.contractMonths,
     billingBaseDay: contract.billingBaseDay,
+    manualOverrideRemainingCount: contract.manualOverrideRemainingCount,
   });
 
-  const remainingCount = contract.manualOverrideRemainingCount ?? calc.remainingCount;
+  const remainingCount = calc.remainingCount;
   const status = statusConfig[calc.contractStatus] || statusConfig.active;
   const progressPercent = contract.contractMonths > 0
     ? Math.round(((contract.contractMonths - remainingCount) / contract.contractMonths) * 100)
@@ -116,7 +117,7 @@ export default async function ContractDetailPage({ params }: Props) {
               <span>経過: {calc.elapsedCount} ヶ月</span>
               <span>{progressPercent}%</span>
             </div>
-            {contract.manualOverrideRemainingCount !== null && (
+            {calc.overrideApplied && (
               <p className="text-xs text-amber-600 mt-2">* 残回数は手動で上書きされています</p>
             )}
           </div>
@@ -129,6 +130,9 @@ export default async function ContractDetailPage({ params }: Props) {
             <InfoRow label="契約終了日" value={formatDate(contract.contractEndDate)} />
             <InfoRow label="契約月数" value={`${contract.contractMonths} ヶ月`} />
             <InfoRow label="月額" value={formatCurrency(contract.monthlyFee ? Number(contract.monthlyFee) : null)} />
+            <InfoRow label="カウンター基本料金" value={formatCurrency(contract.counterBaseFee != null ? Number(contract.counterBaseFee) : null)} />
+            <InfoRow label="モノクロ単価" value={contract.monoCounterRate != null ? `${Number(contract.monoCounterRate).toLocaleString()}円/枚` : "\u2014"} />
+            <InfoRow label="カラー単価" value={contract.colorCounterRate != null ? `${Number(contract.colorCounterRate).toLocaleString()}円/枚` : "\u2014"} />
             <InfoRow label="更新基準日" value={contract.billingBaseDay ? `毎月${contract.billingBaseDay}日` : "\u2014"} />
             <InfoRow label="終了予定日" value={formatDate(calc.expectedEndDate)} />
           </div>

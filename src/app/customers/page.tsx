@@ -9,6 +9,7 @@ import { CustomerSearch } from "@/components/customer-search";
 import { Pagination } from "@/components/pagination";
 import { PwaHide } from "@/components/pwa-hide";
 import { normalizePhone } from "@/lib/phone";
+import { refreshRemainingCountCache } from "@/lib/contract-cache";
 
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
 
@@ -27,6 +28,8 @@ async function CustomerList({ searchParams }: { searchParams: SearchParams }) {
   const companyName = typeof params.companyName === "string" ? params.companyName : "";
   const address = typeof params.address === "string" ? params.address : "";
   const phone = typeof params.phone === "string" ? params.phone : "";
+  const remainingMonths = typeof params.remainingMonths === "string" ? params.remainingMonths : "";
+  const remainingMonthsOp = typeof params.remainingMonthsOp === "string" ? params.remainingMonthsOp : "lte";
 
   const where: Record<string, unknown> = { isDeleted: false };
   const andConditions: Record<string, unknown>[] = [];
@@ -43,6 +46,28 @@ async function CustomerList({ searchParams }: { searchParams: SearchParams }) {
       andConditions.push({ phoneNumberNormalized: { contains: normalized } });
     }
   }
+  // リース残回数フィルタ（検索前にキャッシュを最新化して画面表示と一致させる）
+  if (remainingMonths) {
+    await refreshRemainingCountCache();
+    const value = Number(remainingMonths);
+    if (!isNaN(value) && value >= 0) {
+      let compareOp: Record<string, number>;
+      switch (remainingMonthsOp) {
+        case "gte": compareOp = { gte: value }; break;
+        case "lte": compareOp = { lte: value }; break;
+        default:    compareOp = { equals: value }; break;
+      }
+      andConditions.push({
+        leaseContracts: {
+          some: {
+            remainingCountCached: compareOp,
+            contractStatus: { not: "cancelled" },
+          },
+        },
+      });
+    }
+  }
+
   if (andConditions.length > 0) {
     where.AND = andConditions;
   }
@@ -71,7 +96,7 @@ async function CustomerList({ searchParams }: { searchParams: SearchParams }) {
     <>
       {customers.length === 0 ? (
         <p className="text-gray-500 py-8 text-center">
-          {companyName || address || phone
+          {companyName || address || phone || remainingMonths
             ? "検索条件に一致する顧客が見つかりません"
             : "顧客データはまだ登録されていません"}
         </p>

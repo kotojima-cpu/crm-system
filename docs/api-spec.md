@@ -142,6 +142,11 @@
 | page | number | ページ番号 |
 | limit | number | 件数 |
 | search | string | 会社名・担当者名・電話番号での部分一致検索 |
+| companyName | string | 会社名での部分一致検索 |
+| address | string | 住所での部分一致検索 |
+| phone | string | 電話番号での部分一致検索（ハイフン除去して正規化） |
+| remainingMonths | number | リース残回数の検索値（0以上の整数） |
+| remainingMonthsOp | string | 残回数の比較演算子（`gte`: 以上, `lte`: 以下, `eq`: 一致）デフォルト: `eq` |
 | sortBy | string | ソート項目（`companyName`, `companyNameKana`, `createdAt`） |
 | sortOrder | string | ソート順（`asc`, `desc`） |
 
@@ -365,6 +370,9 @@
 | endDate | ○ | YYYY-MM-DD 形式、startDate 以降 |
 | totalMonths | ○ | 正の整数 |
 | monthlyAmount | — | 0以上の整数 |
+| counterBaseFee | — | 0以上の整数（カウンター基本料金・円/月） |
+| monoCounterRate | — | 0以上の整数（モノクロカウンター料金・円/枚） |
+| colorCounterRate | — | 0以上の整数（カラーカウンター料金・円/枚） |
 | notes | — | テキスト |
 
 **レスポンス（201）**: 作成された契約データ

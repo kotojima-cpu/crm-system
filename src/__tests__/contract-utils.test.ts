@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { calculateContractStatus } from "@/lib/contract-utils";
+import { calculateContractStatus, resolveRemainingCount } from "@/lib/contract-utils";
 
 function d(dateStr: string): Date {
   return new Date(dateStr);
@@ -325,6 +325,140 @@ describe("calculateContractStatus", () => {
       });
       // 1/31 + 1ヶ月 = 2/28 or 3/3 (JS Date は月オーバーフロー)
       expect(result.expectedEndDate.getMonth()).toBeGreaterThanOrEqual(1);
+    });
+  });
+});
+
+// ============================
+// resolveRemainingCount
+// ============================
+describe("resolveRemainingCount", () => {
+  describe("手動上書きなし（null）", () => {
+    it("calculateContractStatus と同じ結果を返す", () => {
+      const input = {
+        contractStartDate: d("2026-03-01"),
+        contractMonths: 60,
+        billingBaseDay: 1,
+        now: d("2027-03-01"),
+      };
+      const calcResult = calculateContractStatus(input);
+      const resolveResult = resolveRemainingCount({
+        ...input,
+        manualOverrideRemainingCount: null,
+      });
+      expect(resolveResult.remainingCount).toBe(calcResult.remainingCount);
+      expect(resolveResult.elapsedCount).toBe(calcResult.elapsedCount);
+      expect(resolveResult.contractStatus).toBe(calcResult.contractStatus);
+      expect(resolveResult.overrideApplied).toBe(false);
+    });
+  });
+
+  describe("手動上書きあり", () => {
+    it("remainingCount が上書き値になる", () => {
+      const result = resolveRemainingCount({
+        contractStartDate: d("2026-03-01"),
+        contractMonths: 60,
+        billingBaseDay: 1,
+        manualOverrideRemainingCount: 10,
+        now: d("2027-03-01"),
+      });
+      expect(result.remainingCount).toBe(10);
+      expect(result.overrideApplied).toBe(true);
+    });
+
+    it("elapsedCount は計算値のまま", () => {
+      const result = resolveRemainingCount({
+        contractStartDate: d("2026-03-01"),
+        contractMonths: 60,
+        billingBaseDay: 1,
+        manualOverrideRemainingCount: 10,
+        now: d("2027-03-01"),
+      });
+      // 12ヶ月経過
+      expect(result.elapsedCount).toBe(12);
+    });
+
+    it("上書き値に基づいてステータスが再判定される（active）", () => {
+      const result = resolveRemainingCount({
+        contractStartDate: d("2026-03-01"),
+        contractMonths: 60,
+        billingBaseDay: 1,
+        manualOverrideRemainingCount: 10,
+        now: d("2027-03-01"),
+      });
+      expect(result.contractStatus).toBe("active");
+    });
+
+    it("上書き値3以下でexpiring_soon", () => {
+      const result = resolveRemainingCount({
+        contractStartDate: d("2026-03-01"),
+        contractMonths: 60,
+        billingBaseDay: 1,
+        manualOverrideRemainingCount: 3,
+        now: d("2027-03-01"),
+      });
+      expect(result.contractStatus).toBe("expiring_soon");
+      expect(result.overrideApplied).toBe(true);
+    });
+
+    it("上書き値1でexpiring_soon", () => {
+      const result = resolveRemainingCount({
+        contractStartDate: d("2026-03-01"),
+        contractMonths: 60,
+        billingBaseDay: 1,
+        manualOverrideRemainingCount: 1,
+        now: d("2027-03-01"),
+      });
+      expect(result.contractStatus).toBe("expiring_soon");
+    });
+
+    it("上書き値0でexpired", () => {
+      const result = resolveRemainingCount({
+        contractStartDate: d("2026-03-01"),
+        contractMonths: 60,
+        billingBaseDay: 1,
+        manualOverrideRemainingCount: 0,
+        now: d("2027-03-01"),
+      });
+      expect(result.contractStatus).toBe("expired");
+      expect(result.remainingCount).toBe(0);
+      expect(result.overrideApplied).toBe(true);
+    });
+
+    it("計算値ではexpiredだが上書きでactiveに戻せる", () => {
+      // 24ヶ月契約が満了しているが、手動で残回数を設定
+      const result = resolveRemainingCount({
+        contractStartDate: d("2024-01-01"),
+        contractMonths: 24,
+        billingBaseDay: 1,
+        manualOverrideRemainingCount: 5,
+        now: d("2026-03-01"),
+      });
+      expect(result.contractStatus).toBe("active");
+      expect(result.remainingCount).toBe(5);
+      expect(result.overrideApplied).toBe(true);
+    });
+  });
+
+  describe("expectedEndDate は上書きに影響されない", () => {
+    it("上書きの有無にかかわらず同じexpectedEndDate", () => {
+      const base = {
+        contractStartDate: d("2026-03-01"),
+        contractMonths: 60,
+        billingBaseDay: 1,
+        now: d("2027-03-01"),
+      };
+      const withOverride = resolveRemainingCount({
+        ...base,
+        manualOverrideRemainingCount: 10,
+      });
+      const withoutOverride = resolveRemainingCount({
+        ...base,
+        manualOverrideRemainingCount: null,
+      });
+      expect(withOverride.expectedEndDate.getTime()).toBe(
+        withoutOverride.expectedEndDate.getTime()
+      );
     });
   });
 });

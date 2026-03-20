@@ -7,6 +7,10 @@ declare module "next-auth" {
       name: string;
       loginId: string;
       role: string;
+      // マルチテナント拡張フィールド（Phase 1 スキーマ移行後に JWT に含まれる）
+      tenantId?: string;
+      tenantStatus?: string;
+      authVersion?: number;
     };
   }
 }
@@ -16,5 +20,9 @@ declare module "next-auth/jwt" {
     id: string;
     loginId: string;
     role: string;
+    // マルチテナント拡張フィールド
+    tenantId?: string;
+    tenantStatus?: string;
+    authVersion?: number;
   }
 }

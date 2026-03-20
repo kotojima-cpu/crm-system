@@ -14,8 +14,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // API認証ルートはスルー
-  if (pathname.startsWith("/api/auth")) {
+  // 認証不要なAPIルートはスルー
+  if (pathname.startsWith("/api/auth") || pathname === "/api/health") {
     return NextResponse.next();
   }
 

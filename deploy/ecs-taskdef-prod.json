@@ -1,0 +1,76 @@
+{
+  "family": "oa-system-prod",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "taskRoleArn":      "arn:aws:iam::{{AWS_ACCOUNT_ID}}:role/oa-system-prod-task-role",
+  "executionRoleArn": "arn:aws:iam::{{AWS_ACCOUNT_ID}}:role/oa-system-prod-execution-role",
+
+  "containerDefinitions": [
+    {
+      "name": "oa-system",
+      "image": "{{AWS_ACCOUNT_ID}}.dkr.ecr.ap-northeast-1.amazonaws.com/oa-system:{{IMAGE_TAG}}",
+      "essential": true,
+
+      "portMappings": [
+        {
+          "containerPort": 3000,
+          "protocol": "tcp"
+        }
+      ],
+
+      "environment": [
+        { "name": "NODE_ENV",            "value": "production" },
+        { "name": "APP_ENV",             "value": "production" },
+        { "name": "INFRASTRUCTURE_MODE", "value": "aws" },
+        { "name": "AWS_REGION",          "value": "ap-northeast-1" },
+        { "name": "NEXTAUTH_URL",        "value": "https://app.itf-oa.com" },
+        { "name": "AWS_SES_FROM",        "value": "noreply@itf-oa.com" },
+        { "name": "AWS_SQS_QUEUE_URL",   "value": "https://sqs.ap-northeast-1.amazonaws.com/{{AWS_ACCOUNT_ID}}/oa-system-prod-outbox" }
+      ],
+
+      "secrets": [
+        {
+          "name":      "DATABASE_URL",
+          "valueFrom": "{{PROD_DATABASE_URL_SECRET_ARN}}"
+        },
+        {
+          "name":      "NEXTAUTH_SECRET",
+          "valueFrom": "{{PROD_NEXTAUTH_SECRET_ARN}}"
+        }
+      ],
+
+      "healthCheck": {
+        "command": [
+          "CMD-SHELL",
+          "node -e \"const h=require('http');h.get('http://localhost:3000/api/health',(r)=>{process.exit(0)}).on('error',()=>process.exit(1))\""
+        ],
+        "interval":    30,
+        "timeout":     10,
+        "retries":     3,
+        "startPeriod": 60
+      },
+
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group":         "/ecs/oa-system-prod",
+          "awslogs-region":        "ap-northeast-1",
+          "awslogs-stream-prefix": "ecs",
+          "awslogs-create-group":  "true"
+        }
+      },
+
+      "stopTimeout": 30,
+
+      "ulimits": [
+        {
+          "name":      "nofile",
+          "softLimit": 65536,
+          "hardLimit": 65536
+        }
+      ]
+    }
+  ]
+}

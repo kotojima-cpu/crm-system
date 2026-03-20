@@ -17,6 +17,29 @@ export type ContractCalcResult = {
 };
 
 /**
+ * resolveRemainingCount の入力型
+ * manualOverrideRemainingCount がある場合は上書き値を優先する
+ */
+export type ResolveRemainingInput = {
+  contractStartDate: Date;
+  contractMonths: number;
+  billingBaseDay: number | null;
+  manualOverrideRemainingCount: number | null;
+  now?: Date;
+};
+
+/**
+ * resolveRemainingCount の結果型
+ */
+export type ResolveRemainingResult = {
+  remainingCount: number;   // 最終的な残回数（override優先）
+  elapsedCount: number;     // 経過回数（常に計算値）
+  contractStatus: string;   // ステータス（remainingCountに基づく）
+  expectedEndDate: Date;    // 終了予定日
+  overrideApplied: boolean; // 手動上書きが適用されたか
+};
+
+/**
  * 残回数を計算する
  *
  * ルール:
@@ -64,6 +87,51 @@ export function calculateContractStatus(input: ContractCalcInput): ContractCalcR
     elapsedCount,
     contractStatus,
     expectedEndDate,
+  };
+}
+
+/**
+ * 残回数の統一解決関数（表示・検索・キャッシュの正本）
+ *
+ * manualOverrideRemainingCount がある場合:
+ * - remainingCount は上書き値を使用
+ * - contractStatus は上書き値に基づいて再判定
+ * - overrideApplied = true
+ *
+ * manualOverrideRemainingCount が null の場合:
+ * - calculateContractStatus() の計算値をそのまま使用
+ * - overrideApplied = false
+ */
+export function resolveRemainingCount(input: ResolveRemainingInput): ResolveRemainingResult {
+  const { manualOverrideRemainingCount, ...calcInput } = input;
+
+  const calc = calculateContractStatus(calcInput);
+
+  if (manualOverrideRemainingCount !== null && manualOverrideRemainingCount !== undefined) {
+    const remainingCount = manualOverrideRemainingCount;
+
+    // ステータスは上書き値に基づいて再判定
+    let contractStatus: string;
+    if (remainingCount <= 0) {
+      contractStatus = "expired";
+    } else if (remainingCount <= 3) {
+      contractStatus = "expiring_soon";
+    } else {
+      contractStatus = "active";
+    }
+
+    return {
+      remainingCount,
+      elapsedCount: calc.elapsedCount,
+      contractStatus,
+      expectedEndDate: calc.expectedEndDate,
+      overrideApplied: true,
+    };
+  }
+
+  return {
+    ...calc,
+    overrideApplied: false,
   };
 }
 

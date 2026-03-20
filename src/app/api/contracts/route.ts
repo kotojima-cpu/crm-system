@@ -1,13 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { writeAuditLog } from "@/lib/audit";
-import { getSessionUser, unauthorizedResponse } from "@/lib/session";
-import { calculateContractStatus } from "@/lib/contract-utils";
+import { getSessionUser } from "@/auth/session";
+import { unauthorizedResponse } from "@/lib/session";
+import { resolveRemainingCount } from "@/lib/contract-utils";
 
 // GET /api/contracts — 一覧取得
 export async function GET(request: NextRequest) {
   const user = await getSessionUser();
   if (!user) return unauthorizedResponse();
+  if (!user.tenantId) {
+    return NextResponse.json(
+      { error: { code: "FORBIDDEN", message: "テナントが割り当てられていません" } },
+      { status: 403 }
+    );
+  }
 
   const { searchParams } = request.nextUrl;
   const page = Math.max(1, Number(searchParams.get("page")) || 1);
@@ -15,7 +22,7 @@ export async function GET(request: NextRequest) {
   const customerId = searchParams.get("customerId");
   const status = searchParams.get("status");
 
-  const where: Record<string, unknown> = {};
+  const where: Record<string, unknown> = { tenantId: user.tenantId };
   if (customerId) where.customerId = Number(customerId);
   if (status) where.contractStatus = status;
 
@@ -33,18 +40,23 @@ export async function GET(request: NextRequest) {
   ]);
 
   const data = contracts.map((c) => {
-    const calc = calculateContractStatus({
+    const calc = resolveRemainingCount({
       contractStartDate: c.contractStartDate,
       contractMonths: c.contractMonths,
       billingBaseDay: c.billingBaseDay,
+      manualOverrideRemainingCount: c.manualOverrideRemainingCount,
     });
     return {
       ...c,
       monthlyFee: c.monthlyFee ? Number(c.monthlyFee) : null,
-      remainingCount: c.manualOverrideRemainingCount ?? calc.remainingCount,
+      counterBaseFee: c.counterBaseFee != null ? Number(c.counterBaseFee) : null,
+      monoCounterRate: c.monoCounterRate != null ? Number(c.monoCounterRate) : null,
+      colorCounterRate: c.colorCounterRate != null ? Number(c.colorCounterRate) : null,
+      remainingCount: calc.remainingCount,
       elapsedCount: calc.elapsedCount,
       calculatedStatus: calc.contractStatus,
       expectedEndDate: calc.expectedEndDate,
+      overrideApplied: calc.overrideApplied,
     };
   });
 
@@ -58,6 +70,12 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const user = await getSessionUser();
   if (!user) return unauthorizedResponse();
+  if (!user.tenantId) {
+    return NextResponse.json(
+      { error: { code: "FORBIDDEN", message: "テナントが割り当てられていません" } },
+      { status: 403 }
+    );
+  }
 
   let body: Record<string, unknown>;
   try {
@@ -103,6 +121,19 @@ export async function POST(request: NextRequest) {
     errors.push({ field: "billingBaseDay", message: "更新基準日は1〜28の範囲で入力してください" });
   }
 
+  const counterBaseFee = body.counterBaseFee != null ? Number(body.counterBaseFee) : null;
+  if (counterBaseFee !== null && (isNaN(counterBaseFee) || counterBaseFee < 0)) {
+    errors.push({ field: "counterBaseFee", message: "カウンター基本料金は0以上で入力してください" });
+  }
+  const monoCounterRate = body.monoCounterRate != null ? Number(body.monoCounterRate) : null;
+  if (monoCounterRate !== null && (isNaN(monoCounterRate) || monoCounterRate < 0)) {
+    errors.push({ field: "monoCounterRate", message: "モノクロカウンター料金は0以上で入力してください" });
+  }
+  const colorCounterRate = body.colorCounterRate != null ? Number(body.colorCounterRate) : null;
+  if (colorCounterRate !== null && (isNaN(colorCounterRate) || colorCounterRate < 0)) {
+    errors.push({ field: "colorCounterRate", message: "カラーカウンター料金は0以上で入力してください" });
+  }
+
   if (errors.length > 0) {
     return NextResponse.json(
       { error: { code: "VALIDATION_ERROR", message: errors[0].message, details: errors } },
@@ -110,9 +141,9 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // 顧客存在チェック
+  // 顧客存在チェック（tenantId で自テナント顧客のみ許可）
   const customer = await prisma.customer.findFirst({
-    where: { id: customerId, isDeleted: false },
+    where: { id: customerId, isDeleted: false, tenantId: user.tenantId },
   });
   if (!customer) {
     return NextResponse.json(
@@ -121,15 +152,17 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // 初期ステータスを計算
-  const calc = calculateContractStatus({
+  // 初期ステータスを計算（新規作成時は手動上書きなし）
+  const calc = resolveRemainingCount({
     contractStartDate: contractStartDate!,
     contractMonths,
     billingBaseDay,
+    manualOverrideRemainingCount: null,
   });
 
   const contract = await prisma.leaseContract.create({
     data: {
+      tenantId: customer.tenantId,
       customerId,
       contractNumber: body.contractNumber ? String(body.contractNumber).trim() : null,
       productName,
@@ -137,7 +170,10 @@ export async function POST(request: NextRequest) {
       contractStartDate: contractStartDate!,
       contractEndDate: contractEndDate!,
       contractMonths,
-      monthlyFee: body.monthlyFee ? Number(body.monthlyFee) : null,
+      monthlyFee: body.monthlyFee != null ? Number(body.monthlyFee) : null,
+      counterBaseFee,
+      monoCounterRate,
+      colorCounterRate,
       billingBaseDay,
       contractStatus: calc.contractStatus,
       remainingCountCached: calc.remainingCount,

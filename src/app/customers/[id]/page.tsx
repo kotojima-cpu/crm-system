@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Header } from "@/components/header";
 import { DeleteCustomerButton } from "@/components/delete-customer-button";
 import { PwaHide } from "@/components/pwa-hide";
-import { calculateContractStatus } from "@/lib/contract-utils";
+import { resolveRemainingCount } from "@/lib/contract-utils";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -123,12 +123,12 @@ export default async function CustomerDetailPage({ params }: Props) {
               {/* モバイル: 契約カードUI */}
               <div className="md:hidden space-y-3">
                 {customer.leaseContracts.map((contract) => {
-                  const calc = calculateContractStatus({
+                  const calc = resolveRemainingCount({
                     contractStartDate: contract.contractStartDate,
                     contractMonths: contract.contractMonths,
                     billingBaseDay: contract.billingBaseDay,
+                    manualOverrideRemainingCount: contract.manualOverrideRemainingCount,
                   });
-                  const remaining = contract.manualOverrideRemainingCount ?? calc.remainingCount;
                   const status = statusLabels[calc.contractStatus] || statusLabels.active;
                   const isWarning = calc.contractStatus === "expiring_soon";
                   return (
@@ -151,7 +151,7 @@ export default async function CustomerDetailPage({ params }: Props) {
                       <div className="flex items-center justify-between">
                         <span className="text-xs text-gray-500">残回数</span>
                         <span className={`text-sm font-bold ${isWarning ? "text-yellow-700" : "text-gray-900"}`}>
-                          {remaining} / {contract.contractMonths}
+                          {calc.remainingCount} / {contract.contractMonths}
                         </span>
                       </div>
                     </Link>
@@ -174,12 +174,12 @@ export default async function CustomerDetailPage({ params }: Props) {
                   </thead>
                   <tbody>
                     {customer.leaseContracts.map((contract) => {
-                      const calc = calculateContractStatus({
+                      const calc = resolveRemainingCount({
                         contractStartDate: contract.contractStartDate,
                         contractMonths: contract.contractMonths,
                         billingBaseDay: contract.billingBaseDay,
+                        manualOverrideRemainingCount: contract.manualOverrideRemainingCount,
                       });
-                      const remaining = contract.manualOverrideRemainingCount ?? calc.remainingCount;
                       const status = statusLabels[calc.contractStatus] || statusLabels.active;
                       const isWarning = calc.contractStatus === "expiring_soon";
                       return (
@@ -193,7 +193,7 @@ export default async function CustomerDetailPage({ params }: Props) {
                           <td className="px-3 py-2 text-sm text-gray-600">{formatDate(contract.contractStartDate)}</td>
                           <td className="px-3 py-2 text-sm text-gray-600">
                             <span className={isWarning ? "font-semibold text-yellow-700" : ""}>
-                              {remaining} / {contract.contractMonths}
+                              {calc.remainingCount} / {contract.contractMonths}
                             </span>
                           </td>
                           <td className="px-3 py-2">
