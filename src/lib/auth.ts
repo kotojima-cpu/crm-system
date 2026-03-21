@@ -53,12 +53,25 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
+        // 初回ログイン時: authorize() の返り値を JWT に焼き込む
         token.id = user.id;
         token.loginId = (user as unknown as { loginId: string }).loginId;
         token.role = (user as unknown as { role: string }).role;
         token.tenantId = (user as unknown as { tenantId?: string }).tenantId;
         token.tenantStatus = (user as unknown as { tenantStatus?: string }).tenantStatus;
         token.authVersion = (user as unknown as { authVersion?: number }).authVersion;
+      } else if (token.id) {
+        // 既存セッション更新時: DB から最新の role を再取得
+        // migration でロール名が変わった場合でも、再ログインなしで反映される
+        const dbUser = await prisma.user.findUnique({
+          where: { id: Number(token.id) },
+          select: { role: true, isActive: true, tenantId: true, tenant: { select: { status: true } } },
+        });
+        if (dbUser && dbUser.isActive) {
+          token.role = dbUser.role;
+          token.tenantId = dbUser.tenantId != null ? String(dbUser.tenantId) : undefined;
+          token.tenantStatus = dbUser.tenant?.status ?? undefined;
+        }
       }
       return token;
     },

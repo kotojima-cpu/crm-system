@@ -86,7 +86,7 @@ export interface SessionUser {
   id: ActorUserId;
   name: string;
   loginId: string;
-  role: "platform_admin" | "tenant_admin" | "sales";
+  role: "platform_master" | "platform_operator" | "tenant_admin" | "sales";
   tenantId: TenantId | null;
   tenantStatus: string | null;
   authVersion: number;

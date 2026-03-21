@@ -57,6 +57,14 @@ export class NotFoundError extends AppError {
   }
 }
 
+/** 競合エラー（409） */
+export class ConflictError extends AppError {
+  constructor(message = "リソースが競合しています") {
+    super("CONFLICT", message, 409);
+    this.name = "ConflictError";
+  }
+}
+
 /** バリデーションエラー（400） */
 export class ValidationError extends AppError {
   constructor(

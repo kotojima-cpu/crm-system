@@ -8,11 +8,17 @@ datasource db {
 }
 
 model Tenant {
-  id        Int      @id @default(autoincrement())
-  name      String
-  status    String   @default("active") // "active" | "suspended"
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id             Int      @id @default(autoincrement())
+  name           String
+  status         String   @default("active") // "active" | "suspended"
+  contractorName String?  @map("contractor_name")  // 契約者会社名
+  contactPerson  String?  @map("contact_person")   // 管理者氏名
+  contactEmail   String?  @map("contact_email")    // メールアドレス
+  contactPhone   String?  @map("contact_phone")    // TEL
+  contactMobile  String?  @map("contact_mobile")   // 携帯番号
+  prefecture     String?                            // 都道府県
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
 
   users       User[]
   customers   Customer[]
@@ -28,7 +34,7 @@ model User {
   loginId      String   @unique @map("login_id")
   passwordHash String   @map("password_hash")
   name         String
-  role         String   @default("sales") // "platform_admin" | "tenant_admin" | "sales"
+  role         String   @default("sales") // "platform_master" | "platform_operator" | "tenant_admin" | "sales"
   isActive     Boolean  @default(true) @map("is_active")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
@@ -56,6 +62,7 @@ model Customer {
   contactPhone          String?  @map("contact_phone")
   contactEmail          String?  @map("contact_email")
   notes                 String?
+  customerType          String   @default("new") @map("customer_type") // "new" | "prospect"
   isDeleted             Boolean  @default(false) @map("is_deleted")
   createdBy             Int      @map("created_by")
   createdAt             DateTime @default(now()) @map("created_at")
@@ -71,6 +78,7 @@ model Customer {
   @@index([phone], map: "idx_customers_phone")
   @@index([phoneNumberNormalized], map: "idx_customers_phone_normalized")
   @@index([contactName], map: "idx_customers_contact_name")
+  @@index([customerType], map: "idx_customers_customer_type")
   @@index([isDeleted], map: "idx_customers_is_deleted")
   @@map("customers")
 }

@@ -59,6 +59,12 @@ export async function GET(request: NextRequest) {
     }
   }
 
+  // 顧客種別フィルタ
+  const customerType = searchParams.get("customerType");
+  if (customerType && ["new", "prospect"].includes(customerType)) {
+    andConditions.push({ customerType });
+  }
+
   // リース残回数フィルタ（検索前にキャッシュを最新化して画面表示と一致させる）
   const remainingMonths = searchParams.get("remainingMonths");
   const remainingMonthsOp = searchParams.get("remainingMonthsOp") || "lte";
@@ -104,6 +110,7 @@ export async function GET(request: NextRequest) {
       take: limit,
       select: {
         id: true,
+        customerType: true,
         companyName: true,
         address: true,
         phone: true,
@@ -140,10 +147,15 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { companyName, companyNameKana, zipCode, address, phone, fax, contactName, contactPhone, contactEmail, notes } = body as Record<string, string>;
+  const { customerType, companyName, companyNameKana, zipCode, address, phone, fax, contactName, contactPhone, contactEmail, notes } = body as Record<string, string>;
 
   // バリデーション
   const errors: { field: string; message: string }[] = [];
+
+  // customerType
+  const validCustomerTypes = ["new", "prospect"];
+  const resolvedCustomerType = validCustomerTypes.includes(customerType) ? customerType : "new";
+
   if (!companyName || typeof companyName !== "string" || companyName.trim().length === 0) {
     errors.push({ field: "companyName", message: "会社名は必須です" });
   } else if (companyName.length > 200) {
@@ -168,6 +180,7 @@ export async function POST(request: NextRequest) {
   const customer = await prisma.customer.create({
     data: {
       tenantId: dbUser.tenantId,
+      customerType: resolvedCustomerType,
       companyName: companyName.trim(),
       companyNameKana: companyNameKana?.trim() || null,
       zipCode: zipCode?.trim() || null,

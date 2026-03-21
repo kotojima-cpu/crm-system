@@ -28,6 +28,7 @@ async function CustomerList({ searchParams }: { searchParams: SearchParams }) {
   const companyName = typeof params.companyName === "string" ? params.companyName : "";
   const address = typeof params.address === "string" ? params.address : "";
   const phone = typeof params.phone === "string" ? params.phone : "";
+  const customerType = typeof params.customerType === "string" ? params.customerType : "";
   const remainingMonths = typeof params.remainingMonths === "string" ? params.remainingMonths : "";
   const remainingMonthsOp = typeof params.remainingMonthsOp === "string" ? params.remainingMonthsOp : "lte";
 
@@ -46,6 +47,11 @@ async function CustomerList({ searchParams }: { searchParams: SearchParams }) {
       andConditions.push({ phoneNumberNormalized: { contains: normalized } });
     }
   }
+  // 顧客種別フィルタ
+  if (customerType && ["new", "prospect"].includes(customerType)) {
+    andConditions.push({ customerType });
+  }
+
   // リース残回数フィルタ（検索前にキャッシュを最新化して画面表示と一致させる）
   if (remainingMonths) {
     await refreshRemainingCountCache();
@@ -80,6 +86,7 @@ async function CustomerList({ searchParams }: { searchParams: SearchParams }) {
       take: limit,
       select: {
         id: true,
+        customerType: true,
         companyName: true,
         address: true,
         phone: true,
@@ -96,7 +103,7 @@ async function CustomerList({ searchParams }: { searchParams: SearchParams }) {
     <>
       {customers.length === 0 ? (
         <p className="text-gray-500 py-8 text-center">
-          {companyName || address || phone || remainingMonths
+          {companyName || address || phone || customerType || remainingMonths
             ? "検索条件に一致する顧客が見つかりません"
             : "顧客データはまだ登録されていません"}
         </p>
@@ -110,7 +117,12 @@ async function CustomerList({ searchParams }: { searchParams: SearchParams }) {
                 href={`/customers/${customer.id}`}
                 className="block bg-white rounded-lg shadow-sm border border-gray-200 p-4 active:bg-gray-50"
               >
-                <div className="font-medium text-gray-900 mb-1">{customer.companyName}</div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="font-medium text-gray-900">{customer.companyName}</span>
+                  {customer.customerType === "prospect" && (
+                    <span className="px-1.5 py-0.5 text-xs font-medium rounded bg-amber-100 text-amber-800">見込</span>
+                  )}
+                </div>
                 {customer.address && (
                   <div className="text-xs text-gray-500 mb-1">{customer.address}</div>
                 )}
@@ -130,6 +142,9 @@ async function CustomerList({ searchParams }: { searchParams: SearchParams }) {
             <table className="w-full bg-white rounded-lg shadow-sm border border-gray-200">
               <thead>
                 <tr className="border-b border-gray-200 bg-gray-50">
+                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">
+                    種別
+                  </th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">
                     顧客名
                   </th>
@@ -154,6 +169,13 @@ async function CustomerList({ searchParams }: { searchParams: SearchParams }) {
                     key={customer.id}
                     className="border-b border-gray-100 hover:bg-gray-50"
                   >
+                    <td className="px-4 py-3 text-sm">
+                      {customer.customerType === "prospect" ? (
+                        <span className="px-1.5 py-0.5 text-xs font-medium rounded bg-amber-100 text-amber-800">見込</span>
+                      ) : (
+                        <span className="px-1.5 py-0.5 text-xs font-medium rounded bg-blue-100 text-blue-800">新規</span>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-sm font-medium text-gray-900">
                       <Link
                         href={`/customers/${customer.id}`}

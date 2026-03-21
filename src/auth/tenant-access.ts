@@ -31,10 +31,10 @@ import { logger } from "@/shared/logging";
 export async function requireTenantAccess(): Promise<SessionUser> {
   const user = await requireSessionUser();
 
-  // platform_admin がテナント側 API を直接叩くことを禁止
+  // プラットフォーム管理者がテナント側 API を直接叩くことを禁止
   if (!isTenantRole(user.role)) {
     throw new ForbiddenError(
-      "platform_admin は /platform/* API を使用してください",
+      "プラットフォーム管理者は /platform/* API を使用してください",
       "USE_PLATFORM_API",
     );
   }

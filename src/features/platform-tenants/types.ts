@@ -18,6 +18,12 @@ export interface TenantDetail {
   id: number;
   name: string;
   status: string;
+  contractorName: string | null;
+  contactPerson: string | null;
+  contactEmail: string | null;
+  contactPhone: string | null;
+  contactMobile: string | null;
+  prefecture: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -39,8 +45,48 @@ export interface ListTenantsResult {
   };
 }
 
+/** テナント新規作成の入力 */
+export interface CreateTenantInput {
+  tenantName: string;
+  adminName: string;
+  adminLoginId: string;
+  adminPassword: string;
+  contractorName?: string;
+  contactPerson?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  contactMobile?: string;
+  prefecture?: string;
+}
+
+/** テナント新規作成のレスポンス */
+export interface CreateTenantResult {
+  tenant: TenantDetail;
+  adminUser: {
+    id: number;
+    loginId: string;
+    name: string;
+    role: string;
+  };
+}
+
+/** 契約者情報更新の入力 */
+export interface UpdateTenantContractorInput {
+  contractorName?: string;
+  contactPerson?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  contactMobile?: string;
+  prefecture?: string;
+}
+
 /** 停止予約の入力 */
 export interface SuspendTenantInput {
+  reason: string;
+}
+
+/** 再開の入力 */
+export interface ResumeTenantInput {
   reason: string;
 }
 

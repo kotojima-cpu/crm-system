@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 type CustomerData = {
+  customerType: string;
   companyName: string;
   companyNameKana: string;
   zipCode: string;
@@ -23,6 +24,7 @@ type Props = {
 };
 
 const emptyData: CustomerData = {
+  customerType: "new",
   companyName: "",
   companyNameKana: "",
   zipCode: "",
@@ -99,6 +101,29 @@ export function CustomerForm({ mode, customerId, initialData }: Props) {
       )}
 
       <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">登録種別 <span className="text-red-500">*</span></label>
+          <div className="flex gap-4">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="radio" name="customerType" value="new"
+                checked={data.customerType === "new"}
+                onChange={() => setData((prev) => ({ ...prev, customerType: "new" }))}
+                className="text-blue-600 focus:ring-blue-500" />
+              <span className="text-sm text-gray-700">新規顧客</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="radio" name="customerType" value="prospect"
+                checked={data.customerType === "prospect"}
+                onChange={() => setData((prev) => ({ ...prev, customerType: "prospect" }))}
+                className="text-blue-600 focus:ring-blue-500" />
+              <span className="text-sm text-gray-700">見込顧客</span>
+            </label>
+          </div>
+          {data.customerType === "prospect" && (
+            <p className="text-xs text-amber-600 mt-1">見込顧客はリース契約を追加できません</p>
+          )}
+        </div>
+
         <Field label="会社名" required error={errors.companyName}>
           <input type="text" value={data.companyName} onChange={set("companyName")}
             className={inputClass(errors.companyName)} />

@@ -82,7 +82,7 @@ export default async function PlatformOutboxPage({
   searchParams: SearchParams;
 }) {
   const session = await getServerSession(authOptions);
-  if (!session || session.user?.role !== "platform_admin") {
+  if (!session || (session.user?.role !== "platform_master" && session.user?.role !== "platform_operator" && session.user?.role !== "platform_admin")) {
     redirect("/login");
   }
 

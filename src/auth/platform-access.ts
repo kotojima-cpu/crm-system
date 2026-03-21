@@ -26,7 +26,7 @@ export async function requirePlatformAccess(): Promise<SessionUser> {
   const user = await requireSessionUser();
 
   if (!isPlatformRole(user.role)) {
-    throw new ForbiddenError("platform_admin 権限が必要です");
+    throw new ForbiddenError("プラットフォーム管理者権限が必要です");
   }
 
   // DB 再確認（isActive）

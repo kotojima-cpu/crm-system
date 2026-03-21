@@ -11,6 +11,7 @@ export function CustomerSearch() {
   );
   const [address, setAddress] = useState(searchParams.get("address") || "");
   const [phone, setPhone] = useState(searchParams.get("phone") || "");
+  const [customerType, setCustomerType] = useState(searchParams.get("customerType") || "");
   const [remainingMonths, setRemainingMonths] = useState(searchParams.get("remainingMonths") || "");
   const [remainingMonthsOp, setRemainingMonthsOp] = useState(searchParams.get("remainingMonthsOp") || "lte");
 
@@ -20,6 +21,7 @@ export function CustomerSearch() {
     if (companyName.trim()) params.set("companyName", companyName.trim());
     if (address.trim()) params.set("address", address.trim());
     if (phone.trim()) params.set("phone", phone.trim());
+    if (customerType) params.set("customerType", customerType);
     if (remainingMonths.trim()) {
       params.set("remainingMonths", remainingMonths.trim());
       params.set("remainingMonthsOp", remainingMonthsOp);
@@ -32,12 +34,13 @@ export function CustomerSearch() {
     setCompanyName("");
     setAddress("");
     setPhone("");
+    setCustomerType("");
     setRemainingMonths("");
     setRemainingMonthsOp("lte");
     router.push("/customers");
   };
 
-  const hasFilters = companyName || address || phone || remainingMonths;
+  const hasFilters = companyName || address || phone || customerType || remainingMonths;
 
   return (
     <form onSubmit={handleSearch} className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
@@ -80,6 +83,20 @@ export function CustomerSearch() {
         </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
+        <div>
+          <label className="block text-xs font-medium text-gray-600 mb-1">
+            顧客種別
+          </label>
+          <select
+            value={customerType}
+            onChange={(e) => setCustomerType(e.target.value)}
+            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">すべて</option>
+            <option value="new">新規顧客</option>
+            <option value="prospect">見込顧客</option>
+          </select>
+        </div>
         <div>
           <label className="block text-xs font-medium text-gray-600 mb-1">
             リース残回数

@@ -48,7 +48,36 @@ export enum Permission {
 
   // 監視・メトリクス
   MONITORING_READ = "MONITORING_READ",
+
+  // 運営担当者管理（platform_master のみ）
+  OPERATOR_MANAGE = "OPERATOR_MANAGE",
+
+  // テナント削除（platform_master のみ）
+  TENANT_DELETE = "TENANT_DELETE",
 }
+
+/** platform_operator の基本権限（platform_master にも継承） */
+const PLATFORM_OPERATOR_PERMISSIONS: Permission[] = [
+  Permission.CUSTOMER_READ,
+  Permission.CONTRACT_READ,
+  Permission.INVOICE_READ,
+  Permission.INVOICE_CREATE,
+  Permission.INVOICE_CANCEL,
+  Permission.INVOICE_CONFIRM,
+  Permission.USER_READ,
+  Permission.TENANT_READ,
+  Permission.TENANT_WRITE,
+  Permission.TENANT_SUSPEND,
+  Permission.AUDIT_LOG_READ,
+  Permission.BATCH_EXECUTE,
+  Permission.OUTBOX_READ,
+  Permission.OUTBOX_RETRY,
+  Permission.OUTBOX_REPLAY,
+  Permission.OUTBOX_POLL_EXECUTE,
+  Permission.OUTBOX_RECOVER_STUCK,
+  Permission.OUTBOX_HEALTH_CHECK,
+  Permission.MONITORING_READ,
+];
 
 /** ロールごとの権限マッピング */
 const ROLE_PERMISSIONS: Record<UserRole, ReadonlySet<Permission>> = {
@@ -70,27 +99,14 @@ const ROLE_PERMISSIONS: Record<UserRole, ReadonlySet<Permission>> = {
     Permission.AUDIT_LOG_READ,
   ]),
 
-  platform_admin: new Set([
-    Permission.CUSTOMER_READ,
-    Permission.CONTRACT_READ,
-    Permission.INVOICE_READ,
-    Permission.INVOICE_CREATE,
-    Permission.INVOICE_CANCEL,
-    Permission.INVOICE_CONFIRM,
-    Permission.USER_READ,
-    Permission.TENANT_READ,
-    Permission.TENANT_WRITE,
-    Permission.TENANT_SUSPEND,
-    Permission.AUDIT_LOG_READ,
-    Permission.BATCH_EXECUTE,
-    Permission.OUTBOX_READ,
-    Permission.OUTBOX_RETRY,
-    Permission.OUTBOX_REPLAY,
+  platform_operator: new Set(PLATFORM_OPERATOR_PERMISSIONS),
+
+  platform_master: new Set([
+    ...PLATFORM_OPERATOR_PERMISSIONS,
+    // platform_master のみの追加権限
     Permission.OUTBOX_FORCE_REPLAY,
-    Permission.OUTBOX_POLL_EXECUTE,
-    Permission.OUTBOX_RECOVER_STUCK,
-    Permission.OUTBOX_HEALTH_CHECK,
-    Permission.MONITORING_READ,
+    Permission.OPERATOR_MANAGE,
+    Permission.TENANT_DELETE,
   ]),
 };
 

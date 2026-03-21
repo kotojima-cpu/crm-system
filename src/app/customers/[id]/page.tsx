@@ -68,7 +68,14 @@ export default async function CustomerDetailPage({ params }: Props) {
 
         {/* 顧客情報 */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6 mb-6">
-          <h2 className="text-lg md:text-xl font-bold text-gray-900 mb-1">{customer.companyName}</h2>
+          <div className="flex items-center gap-2 mb-1">
+            <h2 className="text-lg md:text-xl font-bold text-gray-900">{customer.companyName}</h2>
+            {customer.customerType === "prospect" ? (
+              <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-amber-100 text-amber-800">見込顧客</span>
+            ) : (
+              <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-800">新規顧客</span>
+            )}
+          </div>
           {customer.companyNameKana && (
             <p className="text-sm text-gray-500 mb-4">{customer.companyNameKana}</p>
           )}
@@ -106,14 +113,16 @@ export default async function CustomerDetailPage({ params }: Props) {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-base font-semibold text-gray-800">リース契約一覧</h3>
-            <PwaHide>
-              <Link
-                href={`/customers/${customer.id}/contracts/new`}
-                className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
-              >
-                契約を追加
-              </Link>
-            </PwaHide>
+            {customer.customerType !== "prospect" && (
+              <PwaHide>
+                <Link
+                  href={`/customers/${customer.id}/contracts/new`}
+                  className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                >
+                  契約を追加
+                </Link>
+              </PwaHide>
+            )}
           </div>
 
           {customer.leaseContracts.length === 0 ? (

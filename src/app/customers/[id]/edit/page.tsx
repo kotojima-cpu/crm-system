@@ -30,6 +30,7 @@ export default async function EditCustomerPage({ params }: Props) {
           mode="edit"
           customerId={customer.id}
           initialData={{
+            customerType: customer.customerType ?? "new",
             companyName: customer.companyName,
             companyNameKana: customer.companyNameKana || "",
             zipCode: customer.zipCode || "",

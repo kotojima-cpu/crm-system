@@ -97,7 +97,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     );
   }
 
-  const { companyName, companyNameKana, zipCode, address, phone, fax, contactName, contactPhone, contactEmail, notes } = body as Record<string, string>;
+  const { customerType, companyName, companyNameKana, zipCode, address, phone, fax, contactName, contactPhone, contactEmail, notes } = body as Record<string, string>;
 
   // バリデーション
   if (companyName !== undefined) {
@@ -116,6 +116,9 @@ export async function PUT(request: NextRequest, context: RouteContext) {
   }
 
   const updateData: Record<string, unknown> = {};
+  if (customerType !== undefined && ["new", "prospect"].includes(customerType)) {
+    updateData.customerType = customerType;
+  }
   if (companyName !== undefined) updateData.companyName = companyName.trim();
   if (companyNameKana !== undefined) updateData.companyNameKana = companyNameKana?.trim() || null;
   if (zipCode !== undefined) updateData.zipCode = zipCode?.trim() || null;

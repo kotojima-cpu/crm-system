@@ -50,6 +50,10 @@ COPY --from=prisma-cli --chown=nextjs:nodejs /app/node_modules ./node_modules
 # 2. Next.js standalone の node_modules をマージ
 #    (next, react, @prisma/client, .prisma/client 等を追加・上書き)
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone/node_modules ./node_modules
+# 2a. standalone のファイルトレースで不完全になるパッケージを完全版で上書き
+#     bcryptjs 3.x: exports.require → umd/index.js だが、standalone tracer が
+#     umd/ を追跡しないため CJS require() が失敗する
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/bcryptjs ./node_modules/bcryptjs
 
 # 3. standalone サーバー本体
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone/server.js ./server.js
@@ -77,18 +81,21 @@ COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=nextjs:nodejs /app/scripts/docker-entrypoint.sh ./docker-entrypoint.sh
 RUN chmod +x docker-entrypoint.sh
 
-# 7. Turbopack が生成する @prisma/client-{hash} 仮想モジュールID のシンボリックリンク作成
-#    Turbopack standalone は @prisma/client を "@prisma/client-{hash}" という外部IDで参照するが
-#    Node.js の require() はその名前のパッケージを node_modules で探すため、symlink が必要。
-RUN set -e; \
-    for module_id in $(grep -roh '"@prisma/client-[a-f0-9]*"' /app/.next/server/ 2>/dev/null \
-        | tr -d '"' | sort -u); do \
-        alias_name="${module_id#@prisma/}"; \
-        if [ ! -e "/app/node_modules/@prisma/$alias_name" ]; then \
-            ln -sf /app/node_modules/@prisma/client "/app/node_modules/@prisma/$alias_name"; \
-            echo "[Dockerfile] Created symlink: @prisma/$alias_name -> @prisma/client"; \
-        fi; \
-    done
+# 7. Turbopack ハッシュ付き外部モジュール ID のシンボリックリンク作成
+#
+#    Turbopack standalone は serverExternalPackages に指定したパッケージを
+#    "{package}-{hash}" という仮想モジュール ID で参照する。
+#    例: @prisma/client → @prisma/client-a1b2c3d4
+#         bcryptjs     → bcryptjs-ee66c2bdc904f2cf
+#    Node.js の require() はその名前のパッケージを node_modules で探すため、
+#    実体への symlink が必要。
+#
+#    注意: Alpine の busybox grep は巨大な1行ファイル (minified JS) で
+#    バッファ制限によりマッチに失敗することがあるため、
+#    node を使ってスキャンする。
+COPY --chown=nextjs:nodejs scripts/create-turbopack-symlinks.js ./scripts/create-turbopack-symlinks.js
+RUN node scripts/create-turbopack-symlinks.js
+
 
 USER nextjs
 

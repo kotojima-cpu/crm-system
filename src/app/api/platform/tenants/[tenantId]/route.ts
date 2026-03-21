@@ -1,6 +1,6 @@
 /**
- * GET  /api/platform/tenants — テナント一覧（platform 管理者用）
- * POST /api/platform/tenants — テナント新規作成（platform 管理者用）
+ * GET   /api/platform/tenants/[tenantId] — テナント詳細取得
+ * PATCH /api/platform/tenants/[tenantId] — テナント契約者情報更新
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -8,32 +8,30 @@ import { Permission } from "@/auth/permissions";
 import { requirePlatformPermission } from "@/auth/guards";
 import { toErrorResponse } from "@/shared/errors";
 import {
-  listTenants,
-  createTenant,
-  validateCreateTenantInput,
+  getTenantDetail,
+  updateTenantContractor,
+  validateTenantIdParam,
+  validateUpdateContractorInput,
 } from "@/features/platform-tenants";
 
-export async function GET(request: NextRequest) {
+type RouteContext = { params: Promise<{ tenantId: string }> };
+
+export async function GET(request: NextRequest, context: RouteContext) {
   try {
+    const { tenantId: tenantIdStr } = await context.params;
+    const tenantId = validateTenantIdParam(tenantIdStr);
+
     const { user, runInContext } = await requirePlatformPermission(
       Permission.TENANT_READ,
       request,
     );
 
     return runInContext(async () => {
-      const { searchParams } = request.nextUrl;
-      const result = await listTenants(
-        {
-          actorUserId: user.id,
-          actorRole: user.role,
-        },
-        {
-          page: Math.max(1, Number(searchParams.get("page")) || 1),
-          limit: Math.min(100, Math.max(1, Number(searchParams.get("limit")) || 20)),
-        },
+      const tenant = await getTenantDetail(
+        { actorUserId: user.id, actorRole: user.role },
+        tenantId,
       );
-
-      return NextResponse.json(result);
+      return NextResponse.json({ data: tenant });
     });
   } catch (error) {
     if (error && typeof error === "object" && "statusCode" in error) {
@@ -50,8 +48,11 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function PATCH(request: NextRequest, context: RouteContext) {
   try {
+    const { tenantId: tenantIdStr } = await context.params;
+    const tenantId = validateTenantIdParam(tenantIdStr);
+
     const { user, runInContext } = await requirePlatformPermission(
       Permission.TENANT_WRITE,
       request,
@@ -59,14 +60,13 @@ export async function POST(request: NextRequest) {
 
     return runInContext(async () => {
       const body = await request.json();
-      const input = validateCreateTenantInput(body);
-
-      const result = await createTenant(
+      const input = validateUpdateContractorInput(body);
+      const tenant = await updateTenantContractor(
         { actorUserId: user.id, actorRole: user.role },
+        tenantId,
         input,
       );
-
-      return NextResponse.json({ data: result }, { status: 201 });
+      return NextResponse.json({ data: tenant });
     });
   } catch (error) {
     if (error && typeof error === "object" && "statusCode" in error) {
