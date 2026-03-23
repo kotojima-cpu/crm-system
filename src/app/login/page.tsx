@@ -35,9 +35,10 @@ function LoginForm() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-md">
-        <h1 className="text-2xl font-bold text-center text-gray-800 mb-8">
-          OA顧客管理システム
-        </h1>
+        <div className="text-center mb-8">
+          <h1 className="text-2xl font-bold text-gray-800">OAフロント</h1>
+          <p className="text-sm text-gray-500 mt-1">管理システムのログイン画面になります</p>
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
@@ -90,6 +91,7 @@ function LoginForm() {
             {loading ? "ログイン中..." : "ログイン"}
           </button>
         </form>
+        <p className="text-xs text-gray-400 text-center mt-6">株式会社ITフロンティア</p>
       </div>
     </div>
   );

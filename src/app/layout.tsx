@@ -4,13 +4,13 @@ import { PwaRegister } from "@/components/pwa-register";
 import { PwaProvider } from "@/components/pwa-context";
 
 export const metadata: Metadata = {
-  title: "OA顧客管理システム",
+  title: "OAフロント",
   description: "OA機器販売向け顧客管理アプリケーション",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "OA顧客管理",
+    title: "OAフロント",
   },
 };
 
