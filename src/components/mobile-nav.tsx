@@ -8,10 +8,11 @@ type Props = {
   userName: string;
   userRole: string;
   isPlatform: boolean;
+  isMaster: boolean;
   isTenantAdmin: boolean;
 };
 
-export function MobileNav({ userName, userRole, isPlatform, isTenantAdmin }: Props) {
+export function MobileNav({ userName, userRole, isPlatform, isMaster, isTenantAdmin }: Props) {
   const [open, setOpen] = useState(false);
 
   const roleBadge = userRole === "platform_master"
@@ -47,10 +48,18 @@ export function MobileNav({ userName, userRole, isPlatform, isTenantAdmin }: Pro
                   className="block text-sm text-gray-700 hover:text-blue-600 py-2">
                   テナント管理
                 </Link>
-                <Link href="/platform/outbox" onClick={() => setOpen(false)}
-                  className="block text-sm text-gray-700 hover:text-blue-600 py-2">
-                  Outbox管理
-                </Link>
+                {isMaster && (
+                  <>
+                    <Link href="/platform/outbox" onClick={() => setOpen(false)}
+                      className="block text-sm text-gray-700 hover:text-blue-600 py-2">
+                      Outbox管理
+                    </Link>
+                    <Link href="/platform/users" onClick={() => setOpen(false)}
+                      className="block text-sm text-gray-700 hover:text-blue-600 py-2">
+                      親担当者管理
+                    </Link>
+                  </>
+                )}
               </>
             ) : (
               <>

@@ -54,28 +54,60 @@ export enum Permission {
 
   // テナント削除（platform_master のみ）
   TENANT_DELETE = "TENANT_DELETE",
+
+  // 子管理者アカウント管理（platform_operator 用）
+  TENANT_ADMIN_MANAGE = "TENANT_ADMIN_MANAGE",
 }
 
-/** platform_operator の基本権限（platform_master にも継承） */
+/**
+ * platform_operator（親担当者）の権限
+ *
+ * テナント管理（作成・停止・契約者更新）+ 子管理者アカウント管理を許可する。
+ * Outbox運用・親担当者管理・監査ログなど master 専用機能は持たない。
+ */
 const PLATFORM_OPERATOR_PERMISSIONS: Permission[] = [
+  Permission.TENANT_READ,          // テナント一覧・詳細の閲覧
+  Permission.TENANT_WRITE,         // テナント作成 + 契約者情報更新
+  Permission.TENANT_SUSPEND,       // テナント停止 / 再開
+];
+
+/**
+ * platform_master（親管理者）の全権限
+ *
+ * platform_operator の権限に加え、全運営機能を持つ。
+ */
+const PLATFORM_MASTER_PERMISSIONS: Permission[] = [
+  // テナント管理
+  Permission.TENANT_READ,
+  Permission.TENANT_WRITE,
+  Permission.TENANT_SUSPEND,
+  Permission.TENANT_DELETE,
+  // ユーザー管理
+  Permission.USER_READ,
+  Permission.USER_WRITE,
+  // 運営担当者管理
+  Permission.OPERATOR_MANAGE,
+  // 子管理者アカウント管理
+  Permission.TENANT_ADMIN_MANAGE,
+  // 顧客・契約・請求の閲覧（運用監視用）
   Permission.CUSTOMER_READ,
   Permission.CONTRACT_READ,
   Permission.INVOICE_READ,
   Permission.INVOICE_CREATE,
   Permission.INVOICE_CANCEL,
   Permission.INVOICE_CONFIRM,
-  Permission.USER_READ,
-  Permission.TENANT_READ,
-  Permission.TENANT_WRITE,
-  Permission.TENANT_SUSPEND,
+  // 監査・バッチ
   Permission.AUDIT_LOG_READ,
   Permission.BATCH_EXECUTE,
+  // Outbox 運用
   Permission.OUTBOX_READ,
   Permission.OUTBOX_RETRY,
   Permission.OUTBOX_REPLAY,
+  Permission.OUTBOX_FORCE_REPLAY,
   Permission.OUTBOX_POLL_EXECUTE,
   Permission.OUTBOX_RECOVER_STUCK,
   Permission.OUTBOX_HEALTH_CHECK,
+  // 監視
   Permission.MONITORING_READ,
 ];
 
@@ -101,13 +133,7 @@ const ROLE_PERMISSIONS: Record<UserRole, ReadonlySet<Permission>> = {
 
   platform_operator: new Set(PLATFORM_OPERATOR_PERMISSIONS),
 
-  platform_master: new Set([
-    ...PLATFORM_OPERATOR_PERMISSIONS,
-    // platform_master のみの追加権限
-    Permission.OUTBOX_FORCE_REPLAY,
-    Permission.OPERATOR_MANAGE,
-    Permission.TENANT_DELETE,
-  ]),
+  platform_master: new Set(PLATFORM_MASTER_PERMISSIONS),
 };
 
 /** ユーザーが指定の権限を持つか判定する */

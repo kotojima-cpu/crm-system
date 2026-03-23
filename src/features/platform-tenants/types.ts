@@ -18,6 +18,7 @@ export interface TenantDetail {
   id: number;
   name: string;
   status: string;
+  adminLoginId: string | null;
   contractorName: string | null;
   contactPerson: string | null;
   contactEmail: string | null;

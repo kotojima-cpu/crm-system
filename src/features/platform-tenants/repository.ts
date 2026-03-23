@@ -13,6 +13,7 @@ const DETAIL_SELECT = {
   id: true,
   name: true,
   status: true,
+  adminLoginId: true,
   contractorName: true,
   contactPerson: true,
   contactEmail: true,
@@ -54,6 +55,7 @@ export async function create(
   tx: TxClient,
   data: {
     name: string;
+    adminLoginId?: string;
     contractorName?: string;
     contactPerson?: string;
     contactEmail?: string;
@@ -66,6 +68,7 @@ export async function create(
     data: {
       name: data.name,
       status: "active",
+      adminLoginId: data.adminLoginId || null,
       contractorName: data.contractorName || null,
       contactPerson: data.contactPerson || null,
       contactEmail: data.contactEmail || null,
@@ -144,7 +147,7 @@ export async function updateContractor(
 ): Promise<TenantDetail> {
   const data: Record<string, unknown> = {};
   if (input.contractorName !== undefined) data.contractorName = input.contractorName || null;
-  if (input.contactPerson !== undefined) data.contactPerson = input.contactPerson || null;
+  // contactPerson（管理者氏名）は更新不可 — テナント作成時の値を維持
   if (input.contactEmail !== undefined) data.contactEmail = input.contactEmail || null;
   if (input.contactPhone !== undefined) data.contactPhone = input.contactPhone || null;
   if (input.contactMobile !== undefined) data.contactMobile = input.contactMobile || null;

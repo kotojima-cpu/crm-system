@@ -15,10 +15,11 @@ type ContractorData = {
 
 type Props = {
   tenantId: number;
+  adminLoginId: string;
   initialData: ContractorData;
 };
 
-export function TenantContractorForm({ tenantId, initialData }: Props) {
+export function TenantContractorForm({ tenantId, adminLoginId, initialData }: Props) {
   const router = useRouter();
   const [form, setForm] = useState<ContractorData>(initialData);
   const [loading, setLoading] = useState(false);
@@ -86,15 +87,24 @@ export function TenantContractorForm({ tenantId, initialData }: Props) {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">ログインID</label>
+            <input type="text" value={adminLoginId || "未設定"} readOnly disabled
+              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md bg-gray-50 text-gray-500 cursor-not-allowed" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">管理者氏名</label>
+            <input type="text" value={form.contactPerson || "未設定"} readOnly disabled
+              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md bg-gray-50 text-gray-500 cursor-not-allowed" />
+          </div>
+        </div>
+        <p className="text-xs text-gray-400 -mt-3">ログインIDと管理者氏名は変更できません</p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">契約者会社名</label>
             <input type="text" value={form.contractorName} onChange={set("contractorName")}
               className={inputClass("contractorName")} />
             {fieldErrors.contractorName && <p className="text-xs text-red-600 mt-1">{fieldErrors.contractorName}</p>}
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">管理者氏名</label>
-            <input type="text" value={form.contactPerson} onChange={set("contactPerson")}
-              className={inputClass("contactPerson")} />
           </div>
         </div>
 

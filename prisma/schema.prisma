@@ -11,6 +11,7 @@ model Tenant {
   id             Int      @id @default(autoincrement())
   name           String
   status         String   @default("active") // "active" | "suspended"
+  adminLoginId   String?  @map("admin_login_id")   // 初期管理者ログインID（表示用・編集不可）
   contractorName String?  @map("contractor_name")  // 契約者会社名
   contactPerson  String?  @map("contact_person")   // 管理者氏名
   contactEmail   String?  @map("contact_email")    // メールアドレス
@@ -39,10 +40,11 @@ model User {
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
-  tenant         Tenant?         @relation(fields: [tenantId], references: [id])
-  customers      Customer[]
-  leaseContracts LeaseContract[]
-  auditLogs      AuditLog[]
+  tenant             Tenant?         @relation(fields: [tenantId], references: [id])
+  customers          Customer[]      @relation("createdCustomers")
+  assignedCustomers  Customer[]      @relation("assignedCustomers")
+  leaseContracts     LeaseContract[]
+  auditLogs          AuditLog[]
 
   @@index([tenantId], map: "idx_users_tenant_id")
   @@map("users")
@@ -65,14 +67,17 @@ model Customer {
   customerType          String   @default("new") @map("customer_type") // "new" | "prospect"
   isDeleted             Boolean  @default(false) @map("is_deleted")
   createdBy             Int      @map("created_by")
+  assignedUserId        Int?     @map("assigned_user_id")
   createdAt             DateTime @default(now()) @map("created_at")
   updatedAt             DateTime @updatedAt @map("updated_at")
 
   tenant         Tenant          @relation(fields: [tenantId], references: [id])
-  creator        User            @relation(fields: [createdBy], references: [id])
+  creator        User            @relation("createdCustomers", fields: [createdBy], references: [id])
+  assignedUser   User?           @relation("assignedCustomers", fields: [assignedUserId], references: [id])
   leaseContracts LeaseContract[]
 
   @@index([tenantId], map: "idx_customers_tenant_id")
+  @@index([assignedUserId], map: "idx_customers_assigned_user_id")
   @@index([companyName], map: "idx_customers_company_name")
   @@index([companyNameKana], map: "idx_customers_company_name_kana")
   @@index([phone], map: "idx_customers_phone")

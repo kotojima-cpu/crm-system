@@ -11,6 +11,7 @@ export async function Header() {
 
   const role = session.user.role;
   const isPlatform = role === "platform_master" || role === "platform_operator";
+  const isMaster = role === "platform_master";
   const isTenantAdmin = role === "tenant_admin";
 
   // ロールバッジの表示名
@@ -30,7 +31,7 @@ export async function Header() {
       <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
         <div className="flex items-center gap-6">
           <Link href={homeHref} className="text-lg font-bold text-gray-800">
-            OA顧客管理
+            OAフロント
           </Link>
           {/* デスクトップナビ */}
           <nav className="hidden md:flex gap-4">
@@ -39,9 +40,16 @@ export async function Header() {
                 <Link href="/platform/tenants" className="text-sm text-gray-600 hover:text-gray-900">
                   テナント管理
                 </Link>
-                <Link href="/platform/outbox" className="text-sm text-gray-600 hover:text-gray-900">
-                  Outbox管理
-                </Link>
+                {isMaster && (
+                  <>
+                    <Link href="/platform/outbox" className="text-sm text-gray-600 hover:text-gray-900">
+                      Outbox管理
+                    </Link>
+                    <Link href="/platform/users" className="text-sm text-gray-600 hover:text-gray-900">
+                      親担当者管理
+                    </Link>
+                  </>
+                )}
               </>
             ) : (
               <>
@@ -72,6 +80,7 @@ export async function Header() {
           userName={session.user.name ?? ""}
           userRole={role ?? "sales"}
           isPlatform={isPlatform}
+          isMaster={isMaster}
           isTenantAdmin={isTenantAdmin}
         />
       </div>

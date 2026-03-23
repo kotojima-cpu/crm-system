@@ -66,23 +66,43 @@ export function validateCreateTenantInput(input: unknown): CreateTenantInput {
     errors.push({ field: "adminPassword", message: `パスワードは${MAX_PASSWORD_LENGTH}文字以内で入力してください` });
   }
 
+  // 住所（都道府県）— 必須
+  if (!body.prefecture || typeof body.prefecture !== "string" || body.prefecture.trim().length === 0) {
+    errors.push({ field: "prefecture", message: "都道府県は必須です" });
+  } else if (!PREFECTURES.includes(body.prefecture.trim() as typeof PREFECTURES[number])) {
+    errors.push({ field: "prefecture", message: "都道府県が不正です" });
+  }
+
+  // メールアドレス — 必須
+  if (!body.contactEmail || typeof body.contactEmail !== "string" || body.contactEmail.trim().length === 0) {
+    errors.push({ field: "contactEmail", message: "メールアドレスは必須です" });
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.contactEmail.trim())) {
+    errors.push({ field: "contactEmail", message: "メールアドレスの形式が不正です" });
+  }
+
+  // TEL — 必須
+  if (!body.contactPhone || typeof body.contactPhone !== "string" || body.contactPhone.trim().length === 0) {
+    errors.push({ field: "contactPhone", message: "TELは必須です" });
+  }
+
   if (errors.length > 0) {
     throw new ValidationError(errors[0].message, errors);
   }
 
-  // 契約者情報（任意）のバリデーション
-  const contractor = extractContractorFields(body, errors);
-
-  if (errors.length > 0) {
-    throw new ValidationError(errors[0].message, errors);
-  }
+  // 携帯番号（任意）
+  const contactMobile = body.contactMobile && typeof body.contactMobile === "string" && body.contactMobile.trim().length > 0
+    ? body.contactMobile.trim()
+    : undefined;
 
   return {
     tenantName: (body.tenantName as string).trim(),
     adminName: (body.adminName as string).trim(),
     adminLoginId: (body.adminLoginId as string).trim(),
     adminPassword: body.adminPassword as string,
-    ...contractor,
+    prefecture: (body.prefecture as string).trim(),
+    contactEmail: (body.contactEmail as string).trim(),
+    contactPhone: (body.contactPhone as string).trim(),
+    contactMobile,
   };
 }
 
@@ -96,9 +116,7 @@ function extractContractorFields(
   if (body.contractorName !== undefined && body.contractorName !== "") {
     result.contractorName = String(body.contractorName).trim();
   }
-  if (body.contactPerson !== undefined && body.contactPerson !== "") {
-    result.contactPerson = String(body.contactPerson).trim();
-  }
+  // contactPerson（管理者氏名）は更新不可 — テナント作成時の値を維持するため除外
   if (body.contactEmail !== undefined && body.contactEmail !== "") {
     const email = String(body.contactEmail).trim();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {

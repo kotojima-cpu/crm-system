@@ -18,12 +18,10 @@ export function CreateTenantForm() {
     adminName: "",
     adminLoginId: "",
     adminPassword: "",
-    contractorName: "",
-    contactPerson: "",
+    prefecture: "",
     contactEmail: "",
     contactPhone: "",
     contactMobile: "",
-    prefecture: "",
   });
 
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -103,7 +101,7 @@ export function CreateTenantForm() {
           <button
             onClick={() => {
               setSuccess(null);
-              setForm({ tenantName: "", adminName: "", adminLoginId: "", adminPassword: "", contractorName: "", contactPerson: "", contactEmail: "", contactPhone: "", contactMobile: "", prefecture: "" });
+              setForm({ tenantName: "", adminName: "", adminLoginId: "", adminPassword: "", prefecture: "", contactEmail: "", contactPhone: "", contactMobile: "" });
             }}
             className="px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
           >
@@ -128,7 +126,7 @@ export function CreateTenantForm() {
       <fieldset className="space-y-4">
         <legend className="text-sm font-semibold text-gray-700 mb-2">テナント情報</legend>
         <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">テナント名 *</label>
+          <label className="block text-xs font-medium text-gray-600 mb-1">テナント名（会社名） *</label>
           <input type="text" value={form.tenantName} onChange={set("tenantName")}
             placeholder="例: 株式会社ABC" className={inputClass("tenantName")} required />
           {fieldErrors.tenantName && <p className="text-xs text-red-600 mt-1">{fieldErrors.tenantName}</p>}
@@ -161,31 +159,12 @@ export function CreateTenantForm() {
       </fieldset>
 
       <fieldset className="space-y-4">
-        <legend className="text-sm font-semibold text-gray-700 mb-2">契約者情報（任意）</legend>
+        <legend className="text-sm font-semibold text-gray-700 mb-2">契約者連絡先</legend>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">契約者会社名</label>
-            <input type="text" value={form.contractorName} onChange={set("contractorName")}
-              className={inputClass("contractorName")} />
-            {fieldErrors.contractorName && <p className="text-xs text-red-600 mt-1">{fieldErrors.contractorName}</p>}
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">管理者氏名</label>
-            <input type="text" value={form.contactPerson} onChange={set("contactPerson")}
-              className={inputClass("contactPerson")} />
-          </div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">メールアドレス</label>
-            <input type="email" value={form.contactEmail} onChange={set("contactEmail")}
-              className={inputClass("contactEmail")} />
-            {fieldErrors.contactEmail && <p className="text-xs text-red-600 mt-1">{fieldErrors.contactEmail}</p>}
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">都道府県</label>
+            <label className="block text-xs font-medium text-gray-600 mb-1">都道府県 *</label>
             <select value={form.prefecture} onChange={set("prefecture")}
-              className={inputClass("prefecture")}>
+              className={inputClass("prefecture")} required>
               <option value="">選択してください</option>
               {PREFECTURES.map((p) => (
                 <option key={p} value={p}>{p}</option>
@@ -193,12 +172,19 @@ export function CreateTenantForm() {
             </select>
             {fieldErrors.prefecture && <p className="text-xs text-red-600 mt-1">{fieldErrors.prefecture}</p>}
           </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">メールアドレス *</label>
+            <input type="email" value={form.contactEmail} onChange={set("contactEmail")}
+              placeholder="admin@example.com" className={inputClass("contactEmail")} required />
+            {fieldErrors.contactEmail && <p className="text-xs text-red-600 mt-1">{fieldErrors.contactEmail}</p>}
+          </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">TEL</label>
+            <label className="block text-xs font-medium text-gray-600 mb-1">TEL *</label>
             <input type="text" value={form.contactPhone} onChange={set("contactPhone")}
-              placeholder="03-1234-5678" className={inputClass("contactPhone")} />
+              placeholder="03-1234-5678" className={inputClass("contactPhone")} required />
+            {fieldErrors.contactPhone && <p className="text-xs text-red-600 mt-1">{fieldErrors.contactPhone}</p>}
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">携帯番号</label>
@@ -207,6 +193,11 @@ export function CreateTenantForm() {
           </div>
         </div>
       </fieldset>
+
+      <div className="bg-gray-50 border border-gray-200 rounded-md p-3 text-xs text-gray-600">
+        テナント名は契約者会社名に、管理者名は契約者氏名に自動反映されます。
+        契約者情報はテナント詳細画面から後で変更できます。
+      </div>
 
       <div className="flex gap-3 pt-2">
         <button type="submit" disabled={loading}

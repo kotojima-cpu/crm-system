@@ -94,16 +94,17 @@ export default async function TenantDetailPage({ params }: Props) {
 
         {/* 契約者情報 */}
         <TenantContractorForm
-          tenantId={tenant.id}
-          initialData={{
-            contractorName: tenant.contractorName ?? "",
-            contactPerson: tenant.contactPerson ?? "",
-            contactEmail: tenant.contactEmail ?? "",
-            contactPhone: tenant.contactPhone ?? "",
-            contactMobile: tenant.contactMobile ?? "",
-            prefecture: tenant.prefecture ?? "",
-          }}
-        />
+            tenantId={tenant.id}
+            adminLoginId={tenant.adminLoginId ?? ""}
+            initialData={{
+              contractorName: tenant.contractorName ?? "",
+              contactPerson: tenant.contactPerson ?? "",
+              contactEmail: tenant.contactEmail ?? "",
+              contactPhone: tenant.contactPhone ?? "",
+              contactMobile: tenant.contactMobile ?? "",
+              prefecture: tenant.prefecture ?? "",
+            }}
+          />
       </main>
     </>
   );

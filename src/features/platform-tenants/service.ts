@@ -44,8 +44,10 @@ export async function createTenant(
 
     const tenant = await repo.create(tx, {
       name: input.tenantName,
-      contractorName: input.contractorName,
-      contactPerson: input.contactPerson,
+      adminLoginId: input.adminLoginId,
+      // テナント名 → 契約者会社名、管理者名 → 管理者氏名 を自動マッピング
+      contractorName: input.contractorName || input.tenantName,
+      contactPerson: input.contactPerson || input.adminName,
       contactEmail: input.contactEmail,
       contactPhone: input.contactPhone,
       contactMobile: input.contactMobile,
