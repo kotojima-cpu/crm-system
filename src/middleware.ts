@@ -37,6 +37,13 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
+  // /platform/users* と /platform/outbox* は platform_master のみ許可
+  if (pathname.startsWith("/platform/users") || pathname.startsWith("/platform/outbox")) {
+    if (token.role !== "platform_master") {
+      return NextResponse.redirect(new URL("/platform/tenants", request.url));
+    }
+  }
+
   // /platform/* は platform ロールのみ許可
   if (pathname.startsWith("/platform")) {
     if (!isPlatformRole(token.role)) {

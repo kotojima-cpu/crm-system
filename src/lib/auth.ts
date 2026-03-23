@@ -25,6 +25,11 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
+        // 停止テナントのユーザーはログイン不可（親運営は tenantId null なので通過）
+        if (user.tenantId != null && user.tenant?.status === "suspended") {
+          return null;
+        }
+
         const isPasswordValid = await compare(
           credentials.password,
           user.passwordHash
