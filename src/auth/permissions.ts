@@ -54,9 +54,6 @@ export enum Permission {
 
   // テナント削除（platform_master のみ）
   TENANT_DELETE = "TENANT_DELETE",
-
-  // 子管理者アカウント管理（platform_operator 用）
-  TENANT_ADMIN_MANAGE = "TENANT_ADMIN_MANAGE",
 }
 
 /**
@@ -87,8 +84,6 @@ const PLATFORM_MASTER_PERMISSIONS: Permission[] = [
   Permission.USER_WRITE,
   // 運営担当者管理
   Permission.OPERATOR_MANAGE,
-  // 子管理者アカウント管理
-  Permission.TENANT_ADMIN_MANAGE,
   // 顧客・契約・請求の閲覧（運用監視用）
   Permission.CUSTOMER_READ,
   Permission.CONTRACT_READ,
