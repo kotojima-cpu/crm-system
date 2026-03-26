@@ -94,6 +94,11 @@ export const AUDIT_TENANT_RESUMED: AuditEventDef = {
   resourceType: "tenant",
 } as const;
 
+export const AUDIT_TENANT_DELETED: AuditEventDef = {
+  action: "delete",
+  resourceType: "tenant",
+} as const;
+
 /** 認証系 */
 export const AUDIT_AUTH_LOGIN: AuditEventDef = {
   action: "login",

@@ -31,8 +31,12 @@ export async function findMany(
 ): Promise<{ data: TenantSummary[]; total: number }> {
   const { page, limit } = options;
 
+  // デフォルトで論理削除済みテナントを除外
+  const where = { status: { not: "deleted" } };
+
   const [data, total] = await Promise.all([
     tx.tenant.findMany({
+      where,
       orderBy: { createdAt: "desc" },
       skip: (page - 1) * limit,
       take: limit,
@@ -44,7 +48,7 @@ export async function findMany(
         updatedAt: true,
       },
     }),
-    tx.tenant.count(),
+    tx.tenant.count({ where }),
   ]);
 
   return { data, total };
@@ -138,6 +142,18 @@ export async function markActive(
   return tx.tenant.update({
     where: { id: tenantId as number },
     data: { status: "active" },
+    select: DETAIL_SELECT,
+  });
+}
+
+/** テナントを論理削除状態に更新 */
+export async function markDeleted(
+  tx: TxClient,
+  tenantId: TenantId,
+): Promise<TenantDetail> {
+  return tx.tenant.update({
+    where: { id: tenantId as number },
+    data: { status: "deleted" },
     select: DETAIL_SELECT,
   });
 }

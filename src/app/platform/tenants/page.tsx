@@ -18,6 +18,7 @@ type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
 const statusLabel: Record<string, { text: string; className: string }> = {
   active: { text: "稼働中", className: "bg-green-100 text-green-800" },
   suspended: { text: "停止", className: "bg-red-100 text-red-800" },
+  deleted: { text: "削除済み", className: "bg-gray-100 text-gray-500" },
 };
 
 function formatDate(date: Date): string {

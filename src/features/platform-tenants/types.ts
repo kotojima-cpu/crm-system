@@ -92,6 +92,11 @@ export interface ResumeTenantInput {
   reason: string;
 }
 
+/** 論理削除の入力 */
+export interface DeleteTenantInput {
+  reason: string;
+}
+
 /** service 呼び出し時の共通パラメータ */
 export interface PlatformTenantServiceContext {
   actorUserId: ActorUserId;

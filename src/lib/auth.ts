@@ -29,8 +29,8 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        // 停止テナントのユーザーはログイン不可（親運営は tenantId null なので通過）
-        if (user.tenantId != null && user.tenant?.status === "suspended") {
+        // 停止/論理削除テナントのユーザーはログイン不可（親運営は tenantId null なので通過）
+        if (user.tenantId != null && user.tenant?.status !== "active") {
           return null;
         }
 

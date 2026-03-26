@@ -2,10 +2,10 @@
  * Platform Tenant feature 固有 AuditLog helper
  */
 
-import { AUDIT_TENANT_CREATED, AUDIT_TENANT_SUSPENDED, AUDIT_TENANT_RESUMED } from "@/audit";
+import { AUDIT_TENANT_CREATED, AUDIT_TENANT_SUSPENDED, AUDIT_TENANT_RESUMED, AUDIT_TENANT_DELETED } from "@/audit";
 import type { WriteAuditLogInput } from "@/audit";
 import type { TenantId } from "@/shared/types";
-import type { TenantDetail, CreateTenantInput, SuspendTenantInput, ResumeTenantInput } from "./types";
+import type { TenantDetail, CreateTenantInput, SuspendTenantInput, ResumeTenantInput, DeleteTenantInput } from "./types";
 
 /** テナント作成の監査ログ入力 */
 export function buildTenantCreatedAudit(
@@ -57,5 +57,22 @@ export function buildTenantResumedAudit(
     message: `Tenant "${tenant.name}" resumed: ${input.reason}`,
     oldValues: { status: "suspended" },
     newValues: { status: "active", reason: input.reason },
+  };
+}
+
+/** テナント論理削除の監査ログ入力 */
+export function buildTenantDeletedAudit(
+  tenant: TenantDetail,
+  input: DeleteTenantInput,
+  tenantId: TenantId,
+): WriteAuditLogInput {
+  return {
+    ...AUDIT_TENANT_DELETED,
+    recordId: tenant.id,
+    targetTenantId: tenantId,
+    result: "success",
+    message: `Tenant "${tenant.name}" soft-deleted: ${input.reason}`,
+    oldValues: { status: tenant.status },
+    newValues: { status: "deleted", reason: input.reason },
   };
 }

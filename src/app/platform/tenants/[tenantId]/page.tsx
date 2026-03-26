@@ -12,12 +12,14 @@ import { toTenantId } from "@/shared/types/helpers";
 import { Header } from "@/components/header";
 import { TenantStatusActions } from "./tenant-status-actions";
 import { TenantContractorForm } from "./tenant-contractor-form";
+import { TenantDeleteButton } from "./tenant-delete-button";
 
 type Props = { params: Promise<{ tenantId: string }> };
 
 const statusLabel: Record<string, { text: string; className: string }> = {
   active: { text: "稼働中", className: "bg-green-100 text-green-800" },
   suspended: { text: "停止中", className: "bg-red-100 text-red-800" },
+  deleted: { text: "削除済み", className: "bg-gray-100 text-gray-500" },
 };
 
 function formatDate(date: Date): string {
@@ -89,22 +91,38 @@ export default async function TenantDetailPage({ params }: Props) {
           </dl>
         </div>
 
-        {/* テナント停止/再開 */}
-        <TenantStatusActions tenantId={tenant.id} status={tenant.status} />
+        {/* テナント停止/再開（削除済みでは非表示） */}
+        {tenant.status !== "deleted" && (
+          <TenantStatusActions tenantId={tenant.id} status={tenant.status} />
+        )}
 
-        {/* 契約者情報 */}
-        <TenantContractorForm
-            tenantId={tenant.id}
-            adminLoginId={tenant.adminLoginId ?? ""}
-            initialData={{
-              contractorName: tenant.contractorName ?? "",
-              contactPerson: tenant.contactPerson ?? "",
-              contactEmail: tenant.contactEmail ?? "",
-              contactPhone: tenant.contactPhone ?? "",
-              contactMobile: tenant.contactMobile ?? "",
-              prefecture: tenant.prefecture ?? "",
-            }}
-          />
+        {/* 契約者情報（削除済みでは非表示） */}
+        {tenant.status !== "deleted" && (
+          <TenantContractorForm
+              tenantId={tenant.id}
+              adminLoginId={tenant.adminLoginId ?? ""}
+              initialData={{
+                contractorName: tenant.contractorName ?? "",
+                contactPerson: tenant.contactPerson ?? "",
+                contactEmail: tenant.contactEmail ?? "",
+                contactPhone: tenant.contactPhone ?? "",
+                contactMobile: tenant.contactMobile ?? "",
+                prefecture: tenant.prefecture ?? "",
+              }}
+            />
+        )}
+
+        {/* 論理削除（親管理者のみ、削除済みでは非表示） */}
+        {tenant.status !== "deleted" && session.user.role === "platform_master" && (
+          <TenantDeleteButton tenantId={tenant.id} tenantName={tenant.name} />
+        )}
+
+        {/* 削除済み表示 */}
+        {tenant.status === "deleted" && (
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center text-sm text-gray-500">
+            このテナントは論理削除されています。通常の操作はできません。
+          </div>
+        )}
       </main>
     </>
   );

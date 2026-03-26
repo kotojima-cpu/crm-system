@@ -9,6 +9,7 @@ export type {
   ListTenantsResult,
   SuspendTenantInput,
   ResumeTenantInput,
+  DeleteTenantInput,
   PlatformTenantServiceContext,
 } from "./types";
 
@@ -19,6 +20,7 @@ export {
   listTenants,
   suspendTenant,
   resumeTenant,
+  deleteTenant,
   updateTenantContractor,
 } from "./service";
 

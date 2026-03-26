@@ -10,7 +10,7 @@ datasource db {
 model Tenant {
   id             Int      @id @default(autoincrement())
   name           String
-  status         String   @default("active") // "active" | "suspended"
+  status         String   @default("active") // "active" | "suspended" | "deleted"
   adminLoginId   String?  @map("admin_login_id")   // 初期管理者ログインID（表示用・編集不可）
   contractorName String?  @map("contractor_name")  // 契約者会社名
   contactPerson  String?  @map("contact_person")   // 管理者氏名

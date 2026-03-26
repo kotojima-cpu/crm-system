@@ -18,12 +18,13 @@ import type {
   ListTenantsResult,
   SuspendTenantInput,
   ResumeTenantInput,
+  DeleteTenantInput,
   UpdateTenantContractorInput,
   TenantDetail,
   PlatformTenantServiceContext,
 } from "./types";
 import * as repo from "./repository";
-import { buildTenantCreatedAudit, buildTenantSuspendedAudit, buildTenantResumedAudit } from "./audit";
+import { buildTenantCreatedAudit, buildTenantSuspendedAudit, buildTenantResumedAudit, buildTenantDeletedAudit } from "./audit";
 import { buildTenantSuspendedOutbox } from "./outbox";
 
 /** テナント新規作成 + 初期管理者ユーザー作成 */
@@ -133,6 +134,23 @@ export async function resumeTenant(
 
     const updated = await repo.markActive(tx, tenantId);
     await writeAuditLog(tx, buildTenantResumedAudit(updated, input, tenantId));
+    return updated;
+  });
+}
+
+/** テナント論理削除（親管理者のみ） */
+export async function deleteTenant(
+  _ctx: PlatformTenantServiceContext,
+  tenantId: TenantId,
+  input: DeleteTenantInput,
+): Promise<TenantDetail> {
+  return withPlatformTx(async (tx) => {
+    const tenant = await repo.findById(tx, tenantId);
+    if (!tenant) throw new NotFoundError("テナント");
+    if (tenant.status === "deleted") return tenant;
+
+    const updated = await repo.markDeleted(tx, tenantId);
+    await writeAuditLog(tx, buildTenantDeletedAudit(updated, input, tenantId));
     return updated;
   });
 }
