@@ -52,6 +52,7 @@ export interface CreateTenantInput {
   adminName: string;
   adminLoginId: string;
   adminPassword: string;
+  adminEmail: string;
   contractorName?: string;
   contactPerson?: string;
   contactEmail?: string;

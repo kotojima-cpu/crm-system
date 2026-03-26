@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
 
     return runInContext(async () => {
       const body = await request.json();
-      const { loginId, password, name } = body;
+      const { loginId, password, name, email } = body;
 
       // バリデーション
       const errors: { field: string; message: string }[] = [];
@@ -75,6 +75,11 @@ export async function POST(request: NextRequest) {
       }
       if (!name || typeof name !== "string" || name.trim().length === 0) {
         errors.push({ field: "name", message: "名前は必須です" });
+      }
+      if (!email || typeof email !== "string" || email.trim().length === 0) {
+        errors.push({ field: "email", message: "メールアドレスは必須です" });
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+        errors.push({ field: "email", message: "メールアドレスの形式が不正です" });
       }
       if (errors.length > 0) {
         return NextResponse.json(
@@ -99,9 +104,11 @@ export async function POST(request: NextRequest) {
           loginId: loginId.trim(),
           passwordHash,
           name: name.trim(),
+          email: email.trim().toLowerCase(),
           role: "platform_operator",
           tenantId: null,
           isActive: true,
+          mustChangePassword: true,
         },
         select: {
           id: true,

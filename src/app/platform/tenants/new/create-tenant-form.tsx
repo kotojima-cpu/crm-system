@@ -18,6 +18,7 @@ export function CreateTenantForm() {
     adminName: "",
     adminLoginId: "",
     adminPassword: "",
+    adminEmail: "",
     prefecture: "",
     contactEmail: "",
     contactPhone: "",
@@ -101,7 +102,7 @@ export function CreateTenantForm() {
           <button
             onClick={() => {
               setSuccess(null);
-              setForm({ tenantName: "", adminName: "", adminLoginId: "", adminPassword: "", prefecture: "", contactEmail: "", contactPhone: "", contactMobile: "" });
+              setForm({ tenantName: "", adminName: "", adminLoginId: "", adminPassword: "", adminEmail: "", prefecture: "", contactEmail: "", contactPhone: "", contactMobile: "" });
             }}
             className="px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
           >
@@ -156,6 +157,13 @@ export function CreateTenantForm() {
             className={inputClass("adminPassword")} required minLength={8} />
           {fieldErrors.adminPassword && <p className="text-xs text-red-600 mt-1">{fieldErrors.adminPassword}</p>}
         </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-600 mb-1">管理者メールアドレス *</label>
+          <input type="email" value={form.adminEmail} onChange={set("adminEmail")}
+            placeholder="例: admin@example.com" className={inputClass("adminEmail")} required />
+          <p className="text-xs text-gray-400 mt-1">管理者本人の連絡先メール（パスワード再設定等に使用）</p>
+          {fieldErrors.adminEmail && <p className="text-xs text-red-600 mt-1">{fieldErrors.adminEmail}</p>}
+        </div>
       </fieldset>
 
       <fieldset className="space-y-4">
@@ -173,9 +181,9 @@ export function CreateTenantForm() {
             {fieldErrors.prefecture && <p className="text-xs text-red-600 mt-1">{fieldErrors.prefecture}</p>}
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">メールアドレス *</label>
+            <label className="block text-xs font-medium text-gray-600 mb-1">契約者メールアドレス *</label>
             <input type="email" value={form.contactEmail} onChange={set("contactEmail")}
-              placeholder="admin@example.com" className={inputClass("contactEmail")} required />
+              placeholder="info@example.com" className={inputClass("contactEmail")} required />
             {fieldErrors.contactEmail && <p className="text-xs text-red-600 mt-1">{fieldErrors.contactEmail}</p>}
           </div>
         </div>

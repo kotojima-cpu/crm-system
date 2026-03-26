@@ -9,6 +9,7 @@ import Link from "next/link";
 import { Header } from "@/components/header";
 import { prisma } from "@/shared/db";
 import { ToggleActiveButton } from "./toggle-active-button";
+import { ResetPasswordButton } from "./reset-password-button";
 
 function formatDate(date: Date): string {
   return new Date(date).toLocaleDateString("ja-JP", {
@@ -38,6 +39,7 @@ export default async function PlatformUsersPage() {
       id: true,
       loginId: true,
       name: true,
+      email: true,
       role: true,
       isActive: true,
       createdAt: true,
@@ -72,6 +74,7 @@ export default async function PlatformUsersPage() {
               <tr>
                 <th className="px-4 py-3 text-left font-medium text-gray-600">名前</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-600">ログインID</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">メール</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-600">権限</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-600">状態</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-600">作成日</th>
@@ -81,7 +84,7 @@ export default async function PlatformUsersPage() {
             <tbody className="divide-y divide-gray-100">
               {users.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
+                  <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
                     親運営アカウントはまだ登録されていません
                   </td>
                 </tr>
@@ -90,6 +93,7 @@ export default async function PlatformUsersPage() {
                   <tr key={u.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3 font-medium text-gray-900">{u.name}</td>
                     <td className="px-4 py-3 text-gray-600">{u.loginId}</td>
+                    <td className="px-4 py-3 text-gray-500 text-xs">{u.email ?? "—"}</td>
                     <td className="px-4 py-3">
                       <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
                         u.role === "platform_master"
@@ -107,9 +111,12 @@ export default async function PlatformUsersPage() {
                       )}
                     </td>
                     <td className="px-4 py-3 text-gray-500">{formatDate(u.createdAt)}</td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-4 py-3 text-right space-x-2">
                       {u.role === "platform_operator" && u.id !== currentUserId && (
-                        <ToggleActiveButton userId={u.id} isActive={u.isActive} />
+                        <>
+                          <ResetPasswordButton userId={u.id} loginId={u.loginId} />
+                          <ToggleActiveButton userId={u.id} isActive={u.isActive} />
+                        </>
                       )}
                     </td>
                   </tr>

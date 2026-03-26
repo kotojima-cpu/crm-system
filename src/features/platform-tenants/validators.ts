@@ -66,6 +66,13 @@ export function validateCreateTenantInput(input: unknown): CreateTenantInput {
     errors.push({ field: "adminPassword", message: `パスワードは${MAX_PASSWORD_LENGTH}文字以内で入力してください` });
   }
 
+  // adminEmail — 管理者本人メール（必須）
+  if (!body.adminEmail || typeof body.adminEmail !== "string" || body.adminEmail.trim().length === 0) {
+    errors.push({ field: "adminEmail", message: "管理者メールアドレスは必須です" });
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.adminEmail.trim())) {
+    errors.push({ field: "adminEmail", message: "管理者メールアドレスの形式が不正です" });
+  }
+
   // 住所（都道府県）— 必須
   if (!body.prefecture || typeof body.prefecture !== "string" || body.prefecture.trim().length === 0) {
     errors.push({ field: "prefecture", message: "都道府県は必須です" });
@@ -99,6 +106,7 @@ export function validateCreateTenantInput(input: unknown): CreateTenantInput {
     adminName: (body.adminName as string).trim(),
     adminLoginId: (body.adminLoginId as string).trim(),
     adminPassword: body.adminPassword as string,
+    adminEmail: (body.adminEmail as string).trim().toLowerCase(),
     prefecture: (body.prefecture as string).trim(),
     contactEmail: (body.contactEmail as string).trim(),
     contactPhone: (body.contactPhone as string).trim(),

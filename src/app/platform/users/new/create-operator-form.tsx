@@ -14,6 +14,7 @@ export function CreateOperatorForm() {
     loginId: "",
     password: "",
     name: "",
+    email: "",
   });
 
   const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -92,7 +93,7 @@ export function CreateOperatorForm() {
           <button
             onClick={() => {
               setSuccess(null);
-              setForm({ loginId: "", password: "", name: "" });
+              setForm({ loginId: "", password: "", name: "", email: "" });
             }}
             className="px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
           >
@@ -155,6 +156,19 @@ export function CreateOperatorForm() {
           minLength={8}
         />
         {fieldErrors.password && <p className="text-xs text-red-600 mt-1">{fieldErrors.password}</p>}
+      </div>
+
+      <div>
+        <label className="block text-xs font-medium text-gray-600 mb-1">メールアドレス *</label>
+        <input
+          type="email"
+          value={form.email}
+          onChange={set("email")}
+          placeholder="例: tanaka@example.com"
+          className={inputClass("email")}
+          required
+        />
+        {fieldErrors.email && <p className="text-xs text-red-600 mt-1">{fieldErrors.email}</p>}
       </div>
 
       <div className="bg-blue-50 border border-blue-200 rounded-md p-3 text-xs text-blue-800">

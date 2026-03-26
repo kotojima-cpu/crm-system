@@ -88,6 +88,7 @@ export async function createAdminUser(
     loginId: string;
     passwordHash: string;
     name: string;
+    email?: string;
   },
 ): Promise<{ id: number; loginId: string; name: string; role: string }> {
   const user = await tx.user.create({
@@ -96,8 +97,10 @@ export async function createAdminUser(
       loginId: data.loginId,
       passwordHash: data.passwordHash,
       name: data.name,
+      email: data.email ?? null,
       role: "tenant_admin",
       isActive: true,
+      mustChangePassword: true,
     },
     select: { id: true, loginId: true, name: true, role: true },
   });

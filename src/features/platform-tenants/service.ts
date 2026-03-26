@@ -59,6 +59,7 @@ export async function createTenant(
       loginId: input.adminLoginId,
       passwordHash,
       name: input.adminName,
+      email: input.adminEmail,
     });
 
     await writeAuditLog(tx, buildTenantCreatedAudit(tenant, input));
