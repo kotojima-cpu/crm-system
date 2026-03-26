@@ -29,8 +29,10 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        // 停止/論理削除テナントのユーザーはログイン不可（親運営は tenantId null なので通過）
-        if (user.tenantId != null && user.tenant?.status !== "active") {
+        // 停止/論理削除テナントの子ユーザーはログイン不可
+        // 親運営ロール (platform_*) と tenantId null のユーザーは対象外
+        const isPlatform = user.role.startsWith("platform_");
+        if (!isPlatform && user.tenantId != null && user.tenant?.status !== "active") {
           return null;
         }
 
