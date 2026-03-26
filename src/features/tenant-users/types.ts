@@ -9,6 +9,7 @@ export interface TenantUserSummary {
   id: number;
   name: string;
   loginId: string;
+  email: string | null;
   role: string;
   isActive: boolean;
   createdAt: Date;
@@ -48,6 +49,23 @@ export interface InvitationRecord {
   status: string;
   expiresAt: Date;
   createdAt: Date;
+}
+
+/** ユーザー直接作成の入力 */
+export interface CreateTenantUserInput {
+  loginId: string;
+  password: string;
+  name: string;
+  email: string;
+  role: "tenant_admin" | "sales";
+}
+
+/** ユーザー直接作成のレスポンス */
+export interface CreateTenantUserResult {
+  id: number;
+  loginId: string;
+  name: string;
+  role: string;
 }
 
 /** service 呼び出し時の共通パラメータ */

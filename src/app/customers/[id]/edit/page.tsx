@@ -15,11 +15,34 @@ export default async function EditCustomerPage({ params }: Props) {
   const customerId = Number(id);
   if (isNaN(customerId)) notFound();
 
+  const editWhere: Record<string, unknown> = { id: customerId, isDeleted: false };
+  if (session.user.tenantId) {
+    editWhere.tenantId = Number(session.user.tenantId);
+  }
+  if (session.user.role === "sales") {
+    editWhere.assignedUserId = Number(session.user.id);
+  }
+
   const customer = await prisma.customer.findFirst({
-    where: { id: customerId, isDeleted: false },
+    where: editWhere,
   });
 
   if (!customer) notFound();
+
+  // tenant_admin の場合、同一テナント内の担当者候補を取得
+  let assigneeOptions: { id: number; name: string }[] | undefined;
+  if (session.user.role === "tenant_admin" && session.user.tenantId) {
+    const users = await prisma.user.findMany({
+      where: {
+        tenantId: Number(session.user.tenantId),
+        isActive: true,
+        role: { in: ["tenant_admin", "sales"] },
+      },
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    });
+    assigneeOptions = users;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -34,14 +57,19 @@ export default async function EditCustomerPage({ params }: Props) {
             companyName: customer.companyName,
             companyNameKana: customer.companyNameKana || "",
             zipCode: customer.zipCode || "",
-            address: customer.address || "",
+            prefecture: customer.prefecture || "",
+            city: customer.city || "",
+            addressLine1: customer.addressLine1 || "",
+            addressLine2: customer.addressLine2 || "",
             phone: customer.phone || "",
             fax: customer.fax || "",
             contactName: customer.contactName || "",
             contactPhone: customer.contactPhone || "",
             contactEmail: customer.contactEmail || "",
             notes: customer.notes || "",
+            assignedUserId: customer.assignedUserId ? String(customer.assignedUserId) : "",
           }}
+          assigneeOptions={assigneeOptions}
         />
       </main>
     </div>

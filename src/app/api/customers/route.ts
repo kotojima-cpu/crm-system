@@ -29,6 +29,10 @@ export async function GET(request: NextRequest) {
 
   // 検索条件の組み立て
   const where: Record<string, unknown> = { isDeleted: false, tenantId: user.tenantId };
+  // sales は自分の担当顧客のみ表示
+  if (user.role === "sales") {
+    where.assignedUserId = user.id;
+  }
   const andConditions: Record<string, unknown>[] = [];
 
   // 汎用検索（顧客名 OR 電話番号 OR 担当者名）
@@ -147,7 +151,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { customerType, companyName, companyNameKana, zipCode, address, phone, fax, contactName, contactPhone, contactEmail, notes } = body as Record<string, string>;
+  const { customerType, companyName, companyNameKana, zipCode, address, prefecture, city, addressLine1, addressLine2, phone, fax, contactName, contactPhone, contactEmail, notes } = body as Record<string, string>;
 
   // バリデーション
   const errors: { field: string; message: string }[] = [];
@@ -177,6 +181,16 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // 担当者の初期値は常に作成者自身
+  const assignedUserId = user.id;
+
+  // 構造化住所から旧 address を組み立て（互換同期）
+  const pref = prefecture?.trim() || null;
+  const ct = city?.trim() || null;
+  const al1 = addressLine1?.trim() || null;
+  const al2 = addressLine2?.trim() || null;
+  const composedAddress = [pref, ct, al1, al2].filter(Boolean).join(" ") || null;
+
   const customer = await prisma.customer.create({
     data: {
       tenantId: dbUser.tenantId,
@@ -184,7 +198,11 @@ export async function POST(request: NextRequest) {
       companyName: companyName.trim(),
       companyNameKana: companyNameKana?.trim() || null,
       zipCode: zipCode?.trim() || null,
-      address: address?.trim() || null,
+      address: composedAddress,
+      prefecture: pref,
+      city: ct,
+      addressLine1: al1,
+      addressLine2: al2,
       phone: phone?.trim() || null,
       phoneNumberNormalized: normalizePhone(phone),
       fax: fax?.trim() || null,
@@ -193,6 +211,7 @@ export async function POST(request: NextRequest) {
       contactEmail: contactEmail?.trim() || null,
       notes: notes?.trim() || null,
       createdBy: user.id,
+      assignedUserId,
     },
   });
 

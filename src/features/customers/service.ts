@@ -33,6 +33,8 @@ export async function listCustomers(
       search: input.search,
       sortBy: input.sortBy,
       sortOrder: input.sortOrder,
+      // sales は自分の担当顧客のみに制限
+      assignedUserId: ctx.actorRole === "sales" ? ctx.actorUserId : undefined,
     });
   });
 
@@ -53,7 +55,9 @@ export async function getCustomerById(
   customerId: number,
 ): Promise<CustomerDetail> {
   return withTenantTx(ctx.tenantId, async (tx) => {
-    const customer = await repo.findByIdAndTenant(tx, customerId, ctx.tenantId);
+    const customer = await repo.findByIdAndTenant(tx, customerId, ctx.tenantId, {
+      assignedUserId: ctx.actorRole === "sales" ? ctx.actorUserId : undefined,
+    });
     if (!customer) {
       throw new NotFoundError("顧客");
     }
@@ -67,11 +71,15 @@ export async function createCustomer(
   input: CreateCustomerInput,
 ): Promise<CustomerDetail> {
   return withTenantTx(ctx.tenantId, async (tx) => {
+    // 担当者の初期値は常に作成者自身
+    const assignedUserId = ctx.actorUserId as number;
+
     const customer = await repo.createForTenant(
       tx,
       ctx.tenantId,
       ctx.actorUserId,
       input,
+      { assignedUserId },
     );
 
     // AuditLog

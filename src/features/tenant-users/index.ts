@@ -4,6 +4,8 @@ export type {
   ListTenantUsersInput,
   ListTenantUsersResult,
   CreateInvitationInput,
+  CreateTenantUserInput,
+  CreateTenantUserResult,
   InvitationRecord,
   TenantUserServiceContext,
 } from "./types";
@@ -12,7 +14,11 @@ export type {
 export {
   listTenantUsers,
   createInvitation,
+  createTenantUser,
 } from "./service";
 
 // Validators
-export { validateCreateInvitationInput } from "./validators";
+export {
+  validateCreateInvitationInput,
+  validateCreateTenantUserInput,
+} from "./validators";

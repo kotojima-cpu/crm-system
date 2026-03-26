@@ -27,8 +27,13 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     );
   }
 
+  const customerWhere: Record<string, unknown> = { id: customerId, isDeleted: false, tenantId: user.tenantId };
+  if (user.role === "sales") {
+    customerWhere.assignedUserId = user.id;
+  }
+
   const customer = await prisma.customer.findFirst({
-    where: { id: customerId, isDeleted: false, tenantId: user.tenantId },
+    where: customerWhere,
     include: {
       creator: { select: { id: true, name: true } },
       leaseContracts: {
@@ -77,8 +82,12 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     );
   }
 
+  const existingWhere: Record<string, unknown> = { id: customerId, isDeleted: false, tenantId: user.tenantId };
+  if (user.role === "sales") {
+    existingWhere.assignedUserId = user.id;
+  }
   const existing = await prisma.customer.findFirst({
-    where: { id: customerId, isDeleted: false, tenantId: user.tenantId },
+    where: existingWhere,
   });
   if (!existing) {
     return NextResponse.json(
@@ -97,7 +106,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     );
   }
 
-  const { customerType, companyName, companyNameKana, zipCode, address, phone, fax, contactName, contactPhone, contactEmail, notes } = body as Record<string, string>;
+  const { customerType, companyName, companyNameKana, zipCode, address, prefecture, city, addressLine1, addressLine2, phone, fax, contactName, contactPhone, contactEmail, notes } = body as Record<string, string>;
 
   // バリデーション
   if (companyName !== undefined) {
@@ -122,7 +131,18 @@ export async function PUT(request: NextRequest, context: RouteContext) {
   if (companyName !== undefined) updateData.companyName = companyName.trim();
   if (companyNameKana !== undefined) updateData.companyNameKana = companyNameKana?.trim() || null;
   if (zipCode !== undefined) updateData.zipCode = zipCode?.trim() || null;
-  if (address !== undefined) updateData.address = address?.trim() || null;
+  if (prefecture !== undefined) updateData.prefecture = prefecture?.trim() || null;
+  if (city !== undefined) updateData.city = city?.trim() || null;
+  if (addressLine1 !== undefined) updateData.addressLine1 = addressLine1?.trim() || null;
+  if (addressLine2 !== undefined) updateData.addressLine2 = addressLine2?.trim() || null;
+  // 構造化住所のいずれかが更新されたら旧 address も同期
+  if (prefecture !== undefined || city !== undefined || addressLine1 !== undefined || addressLine2 !== undefined) {
+    const pref = (prefecture !== undefined ? prefecture?.trim() : null) || null;
+    const ct = (city !== undefined ? city?.trim() : null) || null;
+    const al1 = (addressLine1 !== undefined ? addressLine1?.trim() : null) || null;
+    const al2 = (addressLine2 !== undefined ? addressLine2?.trim() : null) || null;
+    updateData.address = [pref, ct, al1, al2].filter(Boolean).join(" ") || null;
+  }
   if (phone !== undefined) {
     updateData.phone = phone?.trim() || null;
     updateData.phoneNumberNormalized = normalizePhone(phone);
@@ -132,6 +152,30 @@ export async function PUT(request: NextRequest, context: RouteContext) {
   if (contactPhone !== undefined) updateData.contactPhone = contactPhone?.trim() || null;
   if (contactEmail !== undefined) updateData.contactEmail = contactEmail?.trim() || null;
   if (notes !== undefined) updateData.notes = notes?.trim() || null;
+
+  // 担当者変更: tenant_admin のみ許可
+  if (body.assignedUserId !== undefined && user.role === "tenant_admin") {
+    const newAssignedId = body.assignedUserId === null ? null : Number(body.assignedUserId);
+    if (newAssignedId !== null) {
+      // 同一テナントの tenant_admin / sales のみ許可
+      const assignee = await prisma.user.findFirst({
+        where: {
+          id: newAssignedId,
+          tenantId: user.tenantId,
+          isActive: true,
+          role: { in: ["tenant_admin", "sales"] },
+        },
+        select: { id: true },
+      });
+      if (!assignee) {
+        return NextResponse.json(
+          { error: { code: "VALIDATION_ERROR", message: "指定された担当者は存在しないか、割り当てできません" } },
+          { status: 400 }
+        );
+      }
+    }
+    updateData.assignedUserId = newAssignedId;
+  }
 
   const updated = await prisma.customer.update({
     where: { id: customerId },
@@ -175,8 +219,12 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     );
   }
 
+  const deleteWhere: Record<string, unknown> = { id: customerId, isDeleted: false, tenantId: user.tenantId };
+  if (user.role === "sales") {
+    deleteWhere.assignedUserId = user.id;
+  }
   const existing = await prisma.customer.findFirst({
-    where: { id: customerId, isDeleted: false, tenantId: user.tenantId },
+    where: deleteWhere,
   });
   if (!existing) {
     return NextResponse.json(

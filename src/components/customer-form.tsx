@@ -1,26 +1,35 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useCallback } from "react";
+import { PREFECTURES } from "@/lib/prefectures";
 
 type CustomerData = {
   customerType: string;
   companyName: string;
   companyNameKana: string;
   zipCode: string;
-  address: string;
+  prefecture: string;
+  city: string;
+  addressLine1: string;
+  addressLine2: string;
   phone: string;
   fax: string;
   contactName: string;
   contactPhone: string;
   contactEmail: string;
   notes: string;
+  assignedUserId: string;
 };
+
+type AssigneeOption = { id: number; name: string };
 
 type Props = {
   mode: "create" | "edit";
   customerId?: number;
   initialData?: Partial<CustomerData>;
+  /** tenant_admin の場合のみ担当者候補を渡す */
+  assigneeOptions?: AssigneeOption[];
 };
 
 const emptyData: CustomerData = {
@@ -28,25 +37,72 @@ const emptyData: CustomerData = {
   companyName: "",
   companyNameKana: "",
   zipCode: "",
-  address: "",
+  prefecture: "",
+  city: "",
+  addressLine1: "",
+  addressLine2: "",
   phone: "",
   fax: "",
   contactName: "",
   contactPhone: "",
   contactEmail: "",
   notes: "",
+  assignedUserId: "",
 };
 
-export function CustomerForm({ mode, customerId, initialData }: Props) {
+export function CustomerForm({ mode, customerId, initialData, assigneeOptions }: Props) {
   const router = useRouter();
   const [data, setData] = useState<CustomerData>({ ...emptyData, ...initialData });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState("");
+  const [postalSearching, setPostalSearching] = useState(false);
+  const [postalMessage, setPostalMessage] = useState("");
 
-  const set = (field: keyof CustomerData) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const set = (field: keyof CustomerData) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setData((prev) => ({ ...prev, [field]: e.target.value }));
     setErrors((prev) => ({ ...prev, [field]: "" }));
+  };
+
+  // 郵便番号→住所自動検索
+  const searchPostalCode = useCallback(async (zipCode: string) => {
+    const normalized = zipCode.replace(/-/g, "");
+    if (!/^\d{7}$/.test(normalized)) return;
+
+    setPostalSearching(true);
+    setPostalMessage("");
+    try {
+      const res = await fetch(`/api/postal-code?zipCode=${normalized}`);
+      const json = await res.json();
+      if (json.data?.results?.length > 0) {
+        const r = json.data.results[0];
+        setData((prev) => ({
+          ...prev,
+          prefecture: r.prefecture || prev.prefecture,
+          city: r.city || prev.city,
+          addressLine1: r.town || prev.addressLine1,
+        }));
+        setPostalMessage("");
+      } else {
+        setPostalMessage("該当する住所が見つかりませんでした。手入力してください。");
+      }
+    } catch {
+      setPostalMessage("住所検索に失敗しました。手入力してください。");
+    } finally {
+      setPostalSearching(false);
+    }
+  }, []);
+
+  // 郵便番号入力時の自動検索
+  const handleZipCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setData((prev) => ({ ...prev, zipCode: value }));
+    setErrors((prev) => ({ ...prev, zipCode: "" }));
+    // 7桁入力で自動検索
+    const normalized = value.replace(/-/g, "");
+    if (/^\d{7}$/.test(normalized)) {
+      searchPostalCode(value);
+    }
   };
 
   const validate = (): boolean => {
@@ -73,10 +129,18 @@ export function CustomerForm({ mode, customerId, initialData }: Props) {
     const url = mode === "create" ? "/api/customers" : `/api/customers/${customerId}`;
     const method = mode === "create" ? "POST" : "PUT";
 
+    // assignedUserId は edit + assigneeOptions がある場合のみ送信
+    const payload: Record<string, unknown> = { ...data };
+    if (mode === "edit" && assigneeOptions && data.assignedUserId) {
+      payload.assignedUserId = Number(data.assignedUserId);
+    } else {
+      delete payload.assignedUserId;
+    }
+
     const res = await fetch(url, {
       method,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
+      body: JSON.stringify(payload),
     });
 
     setLoading(false);
@@ -134,16 +198,48 @@ export function CustomerForm({ mode, customerId, initialData }: Props) {
             placeholder="カブシキガイシャ" className={inputClass()} />
         </Field>
 
+        <hr className="my-4" />
+        <p className="text-sm font-medium text-gray-700">住所情報</p>
+
         <div className="grid grid-cols-2 gap-4">
           <Field label="郵便番号" error={errors.zipCode}>
-            <input type="text" value={data.zipCode} onChange={set("zipCode")}
-              placeholder="123-4567" className={inputClass(errors.zipCode)} />
+            <div className="flex gap-2">
+              <input type="text" value={data.zipCode} onChange={handleZipCodeChange}
+                placeholder="123-4567" className={inputClass(errors.zipCode)} />
+              <button type="button" onClick={() => searchPostalCode(data.zipCode)}
+                disabled={postalSearching || !data.zipCode}
+                className="px-3 py-2 text-xs border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 whitespace-nowrap">
+                {postalSearching ? "検索中..." : "住所検索"}
+              </button>
+            </div>
+            {postalMessage && <p className="text-xs text-amber-600 mt-1">{postalMessage}</p>}
           </Field>
           <div></div>
         </div>
 
-        <Field label="住所">
-          <input type="text" value={data.address} onChange={set("address")} className={inputClass()} />
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="都道府県">
+            <select value={data.prefecture} onChange={set("prefecture")} className={inputClass()}>
+              <option value="">選択してください</option>
+              {PREFECTURES.map((p) => (
+                <option key={p} value={p}>{p}</option>
+              ))}
+            </select>
+          </Field>
+          <Field label="市区町村">
+            <input type="text" value={data.city} onChange={set("city")}
+              placeholder="例: 千代田区" className={inputClass()} />
+          </Field>
+        </div>
+
+        <Field label="町域・番地">
+          <input type="text" value={data.addressLine1} onChange={set("addressLine1")}
+            placeholder="例: 丸の内1-1-1" className={inputClass()} />
+        </Field>
+
+        <Field label="建物名・部屋番号">
+          <input type="text" value={data.addressLine2} onChange={set("addressLine2")}
+            placeholder="例: ○○ビル 5F" className={inputClass()} />
         </Field>
 
         <div className="grid grid-cols-2 gap-4">
@@ -172,6 +268,25 @@ export function CustomerForm({ mode, customerId, initialData }: Props) {
             <input type="text" value={data.contactEmail} onChange={set("contactEmail")} className={inputClass(errors.contactEmail)} />
           </Field>
         </div>
+
+        {mode === "edit" && assigneeOptions && assigneeOptions.length > 0 && (
+          <>
+            <hr className="my-4" />
+            <p className="text-sm font-medium text-gray-700">担当者変更</p>
+            <Field label="担当者">
+              <select
+                value={data.assignedUserId}
+                onChange={(e) => setData((prev) => ({ ...prev, assignedUserId: e.target.value }))}
+                className={inputClass()}
+              >
+                <option value="">未割当</option>
+                {assigneeOptions.map((u) => (
+                  <option key={u.id} value={String(u.id)}>{u.name}</option>
+                ))}
+              </select>
+            </Field>
+          </>
+        )}
 
         <Field label="備考">
           <textarea value={data.notes} onChange={set("notes")} rows={3} className={inputClass()} />

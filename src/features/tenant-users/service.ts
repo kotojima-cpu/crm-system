@@ -5,14 +5,17 @@
  * 招待メールは transaction 内送信禁止 — outbox event 登録までに留める。
  */
 
+import { hash } from "bcryptjs";
 import { withTenantTx } from "@/shared/db";
-import { ValidationError } from "@/shared/errors";
+import { ValidationError, ConflictError } from "@/shared/errors";
 import { writeAuditLog } from "@/audit";
 import { writeOutboxEvent } from "@/outbox";
 import type {
   ListTenantUsersInput,
   ListTenantUsersResult,
   CreateInvitationInput,
+  CreateTenantUserInput,
+  CreateTenantUserResult,
   InvitationRecord,
   TenantUserServiceContext,
 } from "./types";
@@ -88,5 +91,44 @@ export async function createInvitation(
     );
 
     return invitation;
+  });
+}
+
+/** テナントユーザーを直接作成（loginId + password） */
+export async function createTenantUser(
+  ctx: TenantUserServiceContext,
+  input: CreateTenantUserInput,
+): Promise<CreateTenantUserResult> {
+  const passwordHash = await hash(input.password, 12);
+
+  return withTenantTx(ctx.tenantId, async (tx) => {
+    // loginId 重複チェック（全テナント横断）
+    const existing = await tx.user.findUnique({
+      where: { loginId: input.loginId },
+      select: { id: true },
+    });
+    if (existing) {
+      throw new ConflictError(`ログインID "${input.loginId}" は既に使用されています`);
+    }
+
+    const user = await repo.createUser(tx, {
+      tenantId: ctx.tenantId as number,
+      loginId: input.loginId,
+      passwordHash,
+      name: input.name,
+      email: input.email,
+      role: input.role,
+    });
+
+    await writeAuditLog(tx, {
+      action: "create",
+      resourceType: "user",
+      recordId: user.id,
+      result: "success",
+      message: `User "${user.loginId}" created with role "${user.role}"`,
+      newValues: { loginId: user.loginId, name: user.name, role: user.role },
+    });
+
+    return user;
   });
 }

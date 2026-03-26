@@ -26,14 +26,19 @@ export async function findManyByTenant(
     search?: string;
     sortBy?: string;
     sortOrder?: "asc" | "desc";
+    /** sales の場合、担当顧客のみに制限するための actorUserId */
+    assignedUserId?: ActorUserId;
   },
 ): Promise<{ data: CustomerSummary[]; total: number }> {
-  const { page, limit, search, sortBy = "updatedAt", sortOrder = "desc" } = options;
+  const { page, limit, search, sortBy = "updatedAt", sortOrder = "desc", assignedUserId } = options;
 
   const where: Record<string, unknown> = {
     tenantId: tenantId as number,
     isDeleted: false,
   };
+  if (assignedUserId !== undefined) {
+    where.assignedUserId = assignedUserId as number;
+  }
 
   if (search) {
     (where as Record<string, unknown>).OR = [
@@ -76,14 +81,17 @@ export async function findByIdAndTenant(
   tx: TxClient,
   customerId: number,
   tenantId: TenantId,
+  options?: { assignedUserId?: ActorUserId },
 ): Promise<CustomerDetail | null> {
-  return tx.customer.findFirst({
-    where: {
-      id: customerId,
-      tenantId: tenantId as number,
-      isDeleted: false,
-    },
-  });
+  const where: Record<string, unknown> = {
+    id: customerId,
+    tenantId: tenantId as number,
+    isDeleted: false,
+  };
+  if (options?.assignedUserId !== undefined) {
+    where.assignedUserId = options.assignedUserId as number;
+  }
+  return tx.customer.findFirst({ where });
 }
 
 /** tenant スコープで顧客を作成 */
@@ -92,6 +100,7 @@ export async function createForTenant(
   tenantId: TenantId,
   actorUserId: ActorUserId,
   input: CreateCustomerInput,
+  options?: { assignedUserId?: number | null },
 ): Promise<CustomerDetail> {
   return tx.customer.create({
     data: {
@@ -108,6 +117,7 @@ export async function createForTenant(
       contactEmail: input.contactEmail ?? null,
       notes: input.notes ?? null,
       createdBy: actorUserId as number,
+      assignedUserId: options?.assignedUserId ?? null,
     },
   });
 }

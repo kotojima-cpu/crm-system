@@ -33,10 +33,19 @@ export default async function CustomerDetailPage({ params }: Props) {
   const customerId = Number(id);
   if (isNaN(customerId)) notFound();
 
+  const detailWhere: Record<string, unknown> = { id: customerId, isDeleted: false };
+  if (session.user.tenantId) {
+    detailWhere.tenantId = Number(session.user.tenantId);
+  }
+  if (session.user.role === "sales") {
+    detailWhere.assignedUserId = Number(session.user.id);
+  }
+
   const customer = await prisma.customer.findFirst({
-    where: { id: customerId, isDeleted: false },
+    where: detailWhere,
     include: {
       creator: { select: { id: true, name: true } },
+      assignedUser: { select: { id: true, name: true } },
       leaseContracts: {
         orderBy: { contractStartDate: "desc" },
       },
@@ -83,7 +92,11 @@ export default async function CustomerDetailPage({ params }: Props) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 text-sm">
             <InfoRow label="郵便番号" value={customer.zipCode} />
             <InfoRow label="電話番号" value={customer.phone} />
-            <InfoRow label="住所" value={customer.address} />
+            <InfoRow label="住所" value={
+              customer.prefecture
+                ? [customer.prefecture, customer.city, customer.addressLine1, customer.addressLine2].filter(Boolean).join(" ")
+                : customer.address
+            } />
             <InfoRow label="FAX" value={customer.fax} />
           </div>
 
@@ -104,8 +117,9 @@ export default async function CustomerDetailPage({ params }: Props) {
           )}
 
           <hr className="my-4" />
-          <div className="text-xs text-gray-400">
-            登録者: {customer.creator.name} | 登録日: {formatDate(customer.createdAt)} | 更新日: {formatDate(customer.updatedAt)}
+          <div className="text-xs text-gray-400 space-y-1">
+            <div>登録者: {customer.creator.name} | 担当: {customer.assignedUser?.name ?? "未割当"}</div>
+            <div>登録日: {formatDate(customer.createdAt)} | 更新日: {formatDate(customer.updatedAt)}</div>
           </div>
         </div>
 

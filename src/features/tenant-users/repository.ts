@@ -6,7 +6,7 @@
 
 import type { TxClient } from "@/shared/db";
 import type { TenantId } from "@/shared/types";
-import type { TenantUserSummary, InvitationRecord } from "./types";
+import type { TenantUserSummary, InvitationRecord, CreateTenantUserResult } from "./types";
 
 /** tenant スコープでユーザー一覧を取得 */
 export async function findManyByTenant(
@@ -28,6 +28,7 @@ export async function findManyByTenant(
         id: true,
         name: true,
         loginId: true,
+        email: true,
         role: true,
         isActive: true,
         createdAt: true,
@@ -73,5 +74,32 @@ export async function findPendingInvitationByEmail(
       email,
       status: "pending",
     },
+  });
+}
+
+/** テナントユーザーを直接作成 */
+export async function createUser(
+  tx: TxClient,
+  data: {
+    tenantId: number;
+    loginId: string;
+    passwordHash: string;
+    name: string;
+    email?: string;
+    role: string;
+  },
+): Promise<CreateTenantUserResult> {
+  return tx.user.create({
+    data: {
+      tenantId: data.tenantId,
+      loginId: data.loginId,
+      passwordHash: data.passwordHash,
+      name: data.name,
+      email: data.email ?? null,
+      role: data.role,
+      isActive: true,
+      mustChangePassword: true,
+    },
+    select: { id: true, loginId: true, name: true, role: true },
   });
 }

@@ -22,6 +22,9 @@ function formatDate(date: Date): string {
 }
 
 async function CustomerList({ searchParams }: { searchParams: SearchParams }) {
+  const session = await getServerSession(authOptions);
+  if (!session) redirect("/login");
+
   const params = await searchParams;
   const page = Math.max(1, Number(params.page) || 1);
   const limit = 20;
@@ -33,6 +36,14 @@ async function CustomerList({ searchParams }: { searchParams: SearchParams }) {
   const remainingMonthsOp = typeof params.remainingMonthsOp === "string" ? params.remainingMonthsOp : "lte";
 
   const where: Record<string, unknown> = { isDeleted: false };
+  // テナント制限
+  if (session.user.tenantId) {
+    where.tenantId = Number(session.user.tenantId);
+  }
+  // sales は自分担当のみ
+  if (session.user.role === "sales") {
+    where.assignedUserId = Number(session.user.id);
+  }
   const andConditions: Record<string, unknown>[] = [];
 
   if (companyName) {
@@ -89,8 +100,12 @@ async function CustomerList({ searchParams }: { searchParams: SearchParams }) {
         customerType: true,
         companyName: true,
         address: true,
+        prefecture: true,
+        city: true,
+        addressLine1: true,
         phone: true,
         contactName: true,
+        assignedUser: { select: { name: true } },
         updatedAt: true,
       },
     }),
@@ -123,8 +138,8 @@ async function CustomerList({ searchParams }: { searchParams: SearchParams }) {
                     <span className="px-1.5 py-0.5 text-xs font-medium rounded bg-amber-100 text-amber-800">見込</span>
                   )}
                 </div>
-                {customer.address && (
-                  <div className="text-xs text-gray-500 mb-1">{customer.address}</div>
+                {(customer.prefecture || customer.address) && (
+                  <div className="text-xs text-gray-500 mb-1">{customer.prefecture ? [customer.prefecture, customer.city, customer.addressLine1].filter(Boolean).join(" ") : customer.address}</div>
                 )}
                 <div className="flex items-center justify-between text-xs text-gray-500">
                   <span>{customer.phone || "\u2014"}</span>
@@ -155,7 +170,10 @@ async function CustomerList({ searchParams }: { searchParams: SearchParams }) {
                     電話番号
                   </th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">
-                    担当者名
+                    顧客担当者
+                  </th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">
+                    担当
                   </th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">
                     最終更新日
@@ -185,13 +203,16 @@ async function CustomerList({ searchParams }: { searchParams: SearchParams }) {
                       </Link>
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-600">
-                      {customer.address || "\u2014"}
+                      {customer.prefecture ? [customer.prefecture, customer.city, customer.addressLine1].filter(Boolean).join(" ") : (customer.address || "\u2014")}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-600">
                       {customer.phone || "\u2014"}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-600">
                       {customer.contactName || "\u2014"}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-600">
+                      {customer.assignedUser?.name || "\u2014"}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-600">
                       {formatDate(customer.updatedAt)}
