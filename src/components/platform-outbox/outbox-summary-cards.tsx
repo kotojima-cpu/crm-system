@@ -48,11 +48,11 @@ export function OutboxSummaryCards({ summary, alerts }: Props) {
           {alerts.map((a, i) => (
             <div key={i} className="text-sm text-orange-700">
               {a.code === "DEAD_EVENTS_EXIST" &&
-                `dead イベントが ${a.count} 件あります。手動 replay が必要です。`}
+                `停止イベントが ${a.count} 件あります。手動で再実行が必要です。`}
               {a.code === "STUCK_PROCESSING" &&
-                `15分以上 processing のまま止まっているイベントが ${a.count} 件あります。`}
+                `15分以上処理中のまま停滞しているイベントが ${a.count} 件あります。`}
               {a.code === "FAILED_EVENTS_HIGH" &&
-                `failed イベントが ${a.count} 件に達しています。確認してください。`}
+                `失敗イベントが ${a.count} 件に達しています。確認してください。`}
             </div>
           ))}
         </div>
@@ -60,35 +60,35 @@ export function OutboxSummaryCards({ summary, alerts }: Props) {
 
       {/* サマリーカード */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <SummaryCard label="待機中 (pending)" count={summary.pendingCount} colorClass={STATUS_COLORS.pending} />
+        <SummaryCard label="待機中" count={summary.pendingCount} colorClass={STATUS_COLORS.pending} />
         <SummaryCard
-          label="処理中 (processing)"
+          label="処理中"
           count={summary.processingCount}
           colorClass={hasStuckAlert ? "bg-red-50 border-red-400 text-red-800" : STATUS_COLORS.processing}
           warning={hasStuckAlert}
         />
-        <SummaryCard label="失敗 (failed)" count={summary.failedCount} colorClass={STATUS_COLORS.failed} />
+        <SummaryCard label="失敗" count={summary.failedCount} colorClass={STATUS_COLORS.failed} />
         <SummaryCard
-          label="停止 (dead)"
+          label="停止"
           count={summary.deadCount}
           colorClass={hasDeadAlert ? "bg-red-900 border-red-700 text-white" : STATUS_COLORS.dead}
           warning={hasDeadAlert}
         />
-        <SummaryCard label="送信済 (sent)" count={summary.sentCount} colorClass={STATUS_COLORS.sent} />
+        <SummaryCard label="送信済み" count={summary.sentCount} colorClass={STATUS_COLORS.sent} />
       </div>
 
       {/* stuck + recent errors */}
       <div className="text-xs text-gray-500 space-y-0.5">
         {summary.stuckProcessingCount > 0 && (
           <div className="text-red-600 font-medium">
-            ⚠️ stuck processing: {summary.stuckProcessingCount} 件（recovery 推奨）
+            ⚠️ 処理停滞: {summary.stuckProcessingCount} 件（復旧を推奨）
           </div>
         )}
         {summary.oldestPendingCreatedAt && (
-          <div>最古 pending: {new Date(summary.oldestPendingCreatedAt).toLocaleString("ja-JP")}</div>
+          <div>最古の待機中: {new Date(summary.oldestPendingCreatedAt).toLocaleString("ja-JP")}</div>
         )}
         {summary.oldestFailedCreatedAt && (
-          <div>最古 failed: {new Date(summary.oldestFailedCreatedAt).toLocaleString("ja-JP")}</div>
+          <div>最古の失敗: {new Date(summary.oldestFailedCreatedAt).toLocaleString("ja-JP")}</div>
         )}
       </div>
 

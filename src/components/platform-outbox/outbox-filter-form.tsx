@@ -55,7 +55,7 @@ export function OutboxFilterForm() {
       </div>
 
       <div className="flex flex-col gap-1">
-        <label className="text-xs text-gray-500">eventType</label>
+        <label className="text-xs text-gray-500">イベント種別</label>
         <input
           type="text"
           value={eventType}
@@ -66,7 +66,7 @@ export function OutboxFilterForm() {
       </div>
 
       <div className="flex flex-col gap-1">
-        <label className="text-xs text-gray-500">executionMode</label>
+        <label className="text-xs text-gray-500">実行方式</label>
         <input
           type="text"
           value={executionMode}

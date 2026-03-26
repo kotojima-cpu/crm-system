@@ -62,16 +62,16 @@ export function OutboxTable({ items, total, limit, offset }: Props) {
       <div className="overflow-x-auto">
         <table className="w-full text-sm border-collapse">
           <thead>
-            <tr className="bg-gray-50 text-left text-xs text-gray-500 uppercase">
+            <tr className="bg-gray-50 text-left text-xs text-gray-500">
               <th className="px-3 py-2 border-b">ID</th>
               <th className="px-3 py-2 border-b">ステータス</th>
-              <th className="px-3 py-2 border-b">eventType</th>
-              <th className="px-3 py-2 border-b">mode</th>
-              <th className="px-3 py-2 border-b">tenantId</th>
-              <th className="px-3 py-2 border-b">requestId</th>
-              <th className="px-3 py-2 border-b">retry</th>
-              <th className="px-3 py-2 border-b">availableAt</th>
-              <th className="px-3 py-2 border-b">createdAt</th>
+              <th className="px-3 py-2 border-b">イベント種別</th>
+              <th className="px-3 py-2 border-b">実行方式</th>
+              <th className="px-3 py-2 border-b">テナントID</th>
+              <th className="px-3 py-2 border-b">リクエストID</th>
+              <th className="px-3 py-2 border-b">再試行回数</th>
+              <th className="px-3 py-2 border-b">処理可能日時</th>
+              <th className="px-3 py-2 border-b">作成日時</th>
               <th className="px-3 py-2 border-b"></th>
             </tr>
           </thead>

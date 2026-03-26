@@ -9,6 +9,12 @@ type HealthCheckState =
   | { phase: "done"; result: OutboxHealthCheckResult }
   | { phase: "error"; message: string };
 
+const HEALTH_STATUS_LABEL: Record<string, string> = {
+  healthy: "正常",
+  warning: "注意",
+  critical: "異常",
+};
+
 function StatusBadge({ status }: { status: "healthy" | "warning" | "critical" }) {
   const classes = {
     healthy: "bg-green-100 text-green-800",
@@ -17,7 +23,7 @@ function StatusBadge({ status }: { status: "healthy" | "warning" | "critical" })
   };
   return (
     <span className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-medium ${classes[status]}`}>
-      {status}
+      {HEALTH_STATUS_LABEL[status] ?? status}
     </span>
   );
 }
@@ -44,13 +50,13 @@ export function OutboxHealthCheckPanel() {
   return (
     <div className="rounded-lg border p-4 space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold">Health Check</h3>
+        <h3 className="text-sm font-semibold">健全性確認</h3>
         <button
           onClick={runHealthCheck}
           disabled={state.phase === "loading"}
           className="text-xs border rounded px-3 py-1.5 hover:bg-gray-50 disabled:opacity-50"
         >
-          {state.phase === "loading" ? "実行中…" : "Health Check 実行"}
+          {state.phase === "loading" ? "実行中…" : "健全性確認を実行"}
         </button>
       </div>
 
@@ -63,13 +69,13 @@ export function OutboxHealthCheckPanel() {
           <dt className="text-gray-500">ステータス</dt>
           <dd><StatusBadge status={state.result.status} /></dd>
 
-          <dt className="text-gray-500">Metrics 発行</dt>
+          <dt className="text-gray-500">メトリクス発行</dt>
           <dd>{state.result.metricsPublished ? "済" : "未"}</dd>
 
           <dt className="text-gray-500">通知送信</dt>
           <dd>{state.result.notificationsSent ? "済" : "未"}</dd>
 
-          <dt className="text-gray-500">Cooldown 抑制</dt>
+          <dt className="text-gray-500">連続通知抑制</dt>
           <dd>{state.result.suppressedByCooldown ? "あり" : "なし"}</dd>
 
           {state.result.alerts.length > 0 && (

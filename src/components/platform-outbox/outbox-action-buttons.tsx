@@ -34,7 +34,7 @@ export function OutboxActionButtons({ eventId, status }: Props) {
     try {
       const res = await post(`/api/platform/outbox/${eventId}/retry`);
       if (res.ok) {
-        setMessage("retry をキューに登録しました。");
+        setMessage("再試行をキューに登録しました。");
         router.refresh();
       } else {
         const json = await res.json().catch(() => ({}));
@@ -51,7 +51,7 @@ export function OutboxActionButtons({ eventId, status }: Props) {
     try {
       const res = await post(`/api/platform/outbox/${eventId}/replay`);
       if (res.ok) {
-        setMessage("dead event を pending に戻しました。");
+        setMessage("停止イベントを待機中に戻しました。");
         router.refresh();
       } else {
         const json = await res.json().catch(() => ({}));
@@ -73,7 +73,7 @@ export function OutboxActionButtons({ eventId, status }: Props) {
         reason: forceReplayReason.trim(),
       });
       if (res.ok) {
-        setMessage("force replay を実行しました（AuditLog に記録済み）。");
+        setMessage("強制再実行を実行しました（監査ログに記録済み）。");
         setShowForceReplayForm(false);
         setForceReplayReason("");
         router.refresh();
@@ -95,7 +95,7 @@ export function OutboxActionButtons({ eventId, status }: Props) {
             disabled={loading !== null}
             className="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700 disabled:opacity-50"
           >
-            {loading === "retry" ? "処理中…" : "🔄 Retry"}
+            {loading === "retry" ? "処理中…" : "🔄 再試行"}
           </button>
         )}
 
@@ -105,7 +105,7 @@ export function OutboxActionButtons({ eventId, status }: Props) {
             disabled={loading !== null}
             className="bg-orange-600 text-white px-4 py-2 rounded text-sm hover:bg-orange-700 disabled:opacity-50"
           >
-            {loading === "replay" ? "処理中…" : "♻️ Replay (dead)"}
+            {loading === "replay" ? "処理中…" : "♻️ 再実行（停止イベント）"}
           </button>
         )}
 
@@ -115,7 +115,7 @@ export function OutboxActionButtons({ eventId, status }: Props) {
             disabled={loading !== null}
             className="bg-red-700 text-white px-4 py-2 rounded text-sm hover:bg-red-800 disabled:opacity-50 border-2 border-red-900"
           >
-            ⚠️ Force Replay（危険）
+            ⚠️ 強制再実行（危険）
           </button>
         )}
       </div>
@@ -124,11 +124,11 @@ export function OutboxActionButtons({ eventId, status }: Props) {
       {showForceReplayForm && (
         <div className="border-2 border-red-400 rounded-lg p-4 bg-red-50 space-y-3">
           <div className="text-sm font-semibold text-red-800">
-            ⚠️ 危険操作: Force Replay
+            ⚠️ 危険操作: 強制再実行
           </div>
           <div className="text-xs text-red-700">
-            sent イベントを強制再実行します。冪等でない handler では二重送信が発生します。
-            実行理由を必ず記録してください（AuditLog に保存されます）。
+            送信済みイベントを強制的に再実行します。二重送信が発生する可能性があります。
+            実行理由を必ず記録してください（監査ログに保存されます）。
           </div>
           <div>
             <label className="block text-xs font-medium text-red-700 mb-1">

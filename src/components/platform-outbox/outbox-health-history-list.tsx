@@ -7,6 +7,12 @@ import {
 } from "@/features/platform-health-history";
 import type { HealthCheckStatus } from "@/features/platform-health-history/types";
 
+const HEALTH_STATUS_LABEL: Record<string, string> = {
+  healthy: "正常",
+  warning: "注意",
+  critical: "異常",
+};
+
 function StatusBadge({ status }: { status: HealthCheckStatus }) {
   const classes = {
     healthy: "bg-green-100 text-green-800",
@@ -15,7 +21,7 @@ function StatusBadge({ status }: { status: HealthCheckStatus }) {
   };
   return (
     <span className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-medium ${classes[status]}`}>
-      {status}
+      {HEALTH_STATUS_LABEL[status] ?? status}
     </span>
   );
 }
@@ -36,9 +42,9 @@ export function OutboxHealthHistoryList({ items }: OutboxHealthHistoryListProps)
           <tr>
             <th className="px-3 py-2 text-left font-medium">実行日時</th>
             <th className="px-3 py-2 text-left font-medium">ステータス</th>
-            <th className="px-3 py-2 text-left font-medium">Metrics</th>
+            <th className="px-3 py-2 text-left font-medium">メトリクス</th>
             <th className="px-3 py-2 text-left font-medium">通知</th>
-            <th className="px-3 py-2 text-left font-medium">Cooldown 抑制</th>
+            <th className="px-3 py-2 text-left font-medium">連続通知抑制</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100">
@@ -63,7 +69,7 @@ export function OutboxHealthHistoryList({ items }: OutboxHealthHistoryListProps)
                 {summary && (
                   <tr key={`${item.id}-summary`} className="bg-gray-50 border-b">
                     <td colSpan={5} className="px-4 py-1 text-gray-500">
-                      pending: {summary.pendingCount} / failed: {summary.failedCount} / dead: {summary.deadCount} / stuck: {summary.stuckProcessingCount} / recoverable: {summary.recoverableStuckCount ?? 0}
+                      待機: {summary.pendingCount} / 失敗: {summary.failedCount} / 停止: {summary.deadCount} / 停滞: {summary.stuckProcessingCount} / 復旧可能: {summary.recoverableStuckCount ?? 0}
                     </td>
                   </tr>
                 )}

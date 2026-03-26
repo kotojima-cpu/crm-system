@@ -49,12 +49,12 @@ export function OutboxDetailCard({ event }: Props) {
         <table className="w-full">
           <tbody>
             <Row label="ID" value={<span className="font-mono">{event.id}</span>} />
-            <Row label="eventType" value={<span className="font-mono">{event.eventType}</span>} />
-            <Row label="executionMode" value={event.executionMode} />
-            <Row label="retryCount" value={`${event.retryCount} / ${event.maxRetries}`} />
-            <Row label="tenantId" value={event.tenantId ?? "-"} />
-            <Row label="resourceId" value={event.resourceId ?? "-"} />
-            <Row label="jobType" value={event.jobType ?? "-"} />
+            <Row label="イベント種別" value={<span className="font-mono">{event.eventType}</span>} />
+            <Row label="実行方式" value={event.executionMode} />
+            <Row label="再試行回数" value={`${event.retryCount} / ${event.maxRetries}`} />
+            <Row label="テナントID" value={event.tenantId ?? "-"} />
+            <Row label="リソースID" value={event.resourceId ?? "-"} />
+            <Row label="ジョブ種別" value={event.jobType ?? "-"} />
           </tbody>
         </table>
       </div>
@@ -62,10 +62,10 @@ export function OutboxDetailCard({ event }: Props) {
       {/* requestId（コピー用） */}
       <div className="border rounded-lg overflow-hidden">
         <div className="bg-gray-50 px-3 py-2 text-xs font-semibold text-gray-500 uppercase">
-          追跡
+          追跡情報
         </div>
         <div className="p-3">
-          <div className="text-xs text-gray-500 mb-1">requestId</div>
+          <div className="text-xs text-gray-500 mb-1">リクエストID</div>
           <div className="font-mono text-sm bg-gray-100 rounded px-2 py-1 break-all select-all">
             {event.requestId ?? "-"}
           </div>
@@ -79,10 +79,10 @@ export function OutboxDetailCard({ event }: Props) {
         </div>
         <table className="w-full">
           <tbody>
-            <Row label="createdAt" value={formatDateTime(event.createdAt)} />
-            <Row label="updatedAt" value={formatDateTime(event.updatedAt)} />
-            <Row label="availableAt" value={formatDateTime(event.availableAt)} />
-            <Row label="processedAt" value={formatDateTime(event.processedAt)} />
+            <Row label="作成日時" value={formatDateTime(event.createdAt)} />
+            <Row label="更新日時" value={formatDateTime(event.updatedAt)} />
+            <Row label="処理可能日時" value={formatDateTime(event.availableAt)} />
+            <Row label="処理完了日時" value={formatDateTime(event.processedAt)} />
           </tbody>
         </table>
       </div>

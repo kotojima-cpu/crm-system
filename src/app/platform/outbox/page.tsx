@@ -62,11 +62,11 @@ async function OutboxContent({ searchParams }: { searchParams: SearchParams }) {
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div>
-          <h3 className="text-sm font-semibold mb-2">Health Check 履歴</h3>
+          <h3 className="text-sm font-semibold mb-2">健全性確認履歴</h3>
           <OutboxHealthHistoryList items={healthHistoryItems} />
         </div>
         <div>
-          <h3 className="text-sm font-semibold mb-2">Alert 履歴</h3>
+          <h3 className="text-sm font-semibold mb-2">アラート履歴</h3>
           <OutboxAlertHistoryList items={alertHistoryItems} />
         </div>
       </div>
@@ -88,22 +88,25 @@ export default async function PlatformOutboxPage({
 
   return (
     <div className="max-w-7xl mx-auto p-6 space-y-4">
+      <Link href="/platform/tenants" className="text-sm text-gray-500 hover:underline">
+        ← ホームへ戻る
+      </Link>
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold">Outbox イベント管理</h1>
+          <h1 className="text-xl font-semibold">非同期処理管理</h1>
           <p className="text-sm text-gray-500">
-            非同期処理の状態確認・retry・replay を行います
+            非同期処理の状態確認・再試行・再実行を行います
           </p>
         </div>
         <div className="flex gap-2 text-sm">
           <Link href="/platform/outbox?status=failed" className="border rounded px-3 py-1.5 hover:bg-gray-50">
-            failed
+            失敗のみ
           </Link>
           <Link href="/platform/outbox?status=dead" className="border rounded px-3 py-1.5 hover:bg-red-50 text-red-700">
-            dead
+            停止のみ
           </Link>
           <Link href="/platform/outbox?status=processing" className="border rounded px-3 py-1.5 hover:bg-orange-50 text-orange-700">
-            stuck
+            停滞のみ
           </Link>
         </div>
       </div>

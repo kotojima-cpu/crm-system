@@ -38,12 +38,12 @@ export function OutboxHistoryCleanupPanel() {
   return (
     <div className="rounded-lg border p-4 space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold">履歴 Cleanup</h3>
+        <h3 className="text-sm font-semibold">履歴整理</h3>
       </div>
 
       <div className="flex items-center gap-3">
         <label className="text-xs text-gray-600 whitespace-nowrap">
-          保持日数 (retentionDays)
+          保持日数
         </label>
         <input
           type="number"
@@ -58,7 +58,7 @@ export function OutboxHistoryCleanupPanel() {
           disabled={state.phase === "loading"}
           className="text-xs border rounded px-3 py-1.5 hover:bg-gray-50 disabled:opacity-50"
         >
-          {state.phase === "loading" ? "実行中…" : "履歴 Cleanup 実行"}
+          {state.phase === "loading" ? "実行中…" : "履歴整理を実行"}
         </button>
       </div>
 
@@ -71,7 +71,7 @@ export function OutboxHistoryCleanupPanel() {
           <dt className="text-gray-500">アラート履歴 削除件数</dt>
           <dd>{state.result.alertHistoryDeletedCount.toLocaleString()}</dd>
 
-          <dt className="text-gray-500">Health Check 履歴 削除件数</dt>
+          <dt className="text-gray-500">健全性確認履歴 削除件数</dt>
           <dd>{state.result.healthHistoryDeletedCount.toLocaleString()}</dd>
 
           <dt className="text-gray-500">保持日数</dt>

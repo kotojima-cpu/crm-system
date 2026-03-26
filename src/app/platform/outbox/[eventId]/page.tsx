@@ -36,12 +36,16 @@ export default async function PlatformOutboxDetailPage({
 
   return (
     <div className="max-w-3xl mx-auto p-6 space-y-6">
-      <div className="flex items-center gap-3">
-        <Link href="/platform/outbox" className="text-sm text-gray-500 hover:underline">
-          ← 一覧に戻る
+      <div className="flex items-center gap-3 text-sm">
+        <Link href="/platform/tenants" className="text-gray-500 hover:underline">
+          ← ホームへ戻る
         </Link>
-        <h1 className="text-xl font-semibold">Outbox イベント #{event.id}</h1>
+        <span className="text-gray-300">|</span>
+        <Link href="/platform/outbox" className="text-gray-500 hover:underline">
+          一覧に戻る
+        </Link>
       </div>
+      <h1 className="text-xl font-semibold">非同期処理イベント #{event.id}</h1>
 
       {/* 操作ボタン */}
       <OutboxActionButtons eventId={event.id} status={event.status} />

@@ -48,7 +48,7 @@ export function OutboxRecoveryPanel() {
 
   return (
     <div className="border rounded-lg p-4 space-y-4 bg-white">
-      <div className="font-semibold text-sm">Stuck Processing Recovery</div>
+      <div className="font-semibold text-sm">処理停滞イベント復旧</div>
 
       <div className="grid grid-cols-2 gap-3 text-sm">
         <div>
@@ -86,7 +86,7 @@ export function OutboxRecoveryPanel() {
           onChange={(e) => setDryRun(e.target.checked)}
           className="rounded"
         />
-        <span>Dry Run（確認のみ、DB 更新なし）</span>
+        <span>確認のみ（Dry Run: DB更新なし）</span>
       </label>
 
       <div className="flex gap-2">
@@ -99,7 +99,7 @@ export function OutboxRecoveryPanel() {
               : "bg-orange-600 hover:bg-orange-700 border-2 border-orange-800"
           }`}
         >
-          {loading ? "実行中…" : dryRun ? "対象確認（Dry Run）" : "⚠️ Recovery 実行"}
+          {loading ? "実行中…" : dryRun ? "対象確認（Dry Run）" : "⚠️ 復旧を実行"}
         </button>
       </div>
 
@@ -112,9 +112,9 @@ export function OutboxRecoveryPanel() {
       {result && (
         <div className="text-sm bg-gray-50 border rounded px-3 py-2 space-y-1">
           <div className="font-medium">
-            {result.recovery.dryRun ? "Dry Run 結果" : "Recovery 結果"}
+            {result.recovery.dryRun ? "確認結果（Dry Run）" : "復旧結果"}
           </div>
-          <div>対象 ({result.recovery.dryRun ? "対象候補" : "回収済"}): {result.recovery.dryRun ? result.recovery.recoveredIds.length : result.recovery.recoveredCount} 件</div>
+          <div>対象 ({result.recovery.dryRun ? "対象候補" : "復旧済み"}): {result.recovery.dryRun ? result.recovery.recoveredIds.length : result.recovery.recoveredCount} 件</div>
           {!result.recovery.dryRun && (
             <>
               <div>スキップ: {result.recovery.skippedCount} 件</div>

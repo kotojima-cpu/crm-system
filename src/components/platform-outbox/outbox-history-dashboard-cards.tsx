@@ -17,6 +17,13 @@ function StatCard({
   );
 }
 
+const HEALTH_STATUS_LABEL: Record<string, string> = {
+  healthy: "正常",
+  warning: "注意",
+  critical: "異常",
+  unknown: "未判定",
+};
+
 function HealthStatusBadge({ status }: { status: HealthCheckStatus | "unknown" }) {
   const classes: Record<string, string> = {
     healthy: "bg-green-100 text-green-800",
@@ -26,7 +33,7 @@ function HealthStatusBadge({ status }: { status: HealthCheckStatus | "unknown" }
   };
   return (
     <span className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-medium ${classes[status] ?? classes.unknown}`}>
-      {status}
+      {HEALTH_STATUS_LABEL[status] ?? status}
     </span>
   );
 }
@@ -39,11 +46,11 @@ export function OutboxHistoryDashboardCards({ summary }: Props) {
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
       <StatCard
-        label="アラート履歴 (総件数)"
+        label="アラート履歴（総件数）"
         value={summary.alertHistoryCount.toLocaleString()}
       />
       <StatCard
-        label="Health Check 履歴 (総件数)"
+        label="健全性確認履歴（総件数）"
         value={summary.healthHistoryCount.toLocaleString()}
       />
       <StatCard
@@ -51,18 +58,18 @@ export function OutboxHistoryDashboardCards({ summary }: Props) {
         value={summary.webhookAlertCount.toLocaleString()}
       />
       <StatCard
-        label="Mail アラート送信数"
+        label="メール アラート送信数"
         value={summary.mailAlertCount.toLocaleString()}
       />
       <StatCard
-        label="Cooldown 抑制 Health Check 数"
+        label="連続通知抑制された確認数"
         value={summary.suppressedHealthCheckCount.toLocaleString()}
       />
       <div className="border rounded-lg p-4 bg-white">
         <div className="text-2xl font-semibold">
           <HealthStatusBadge status={summary.latestHealthStatus} />
         </div>
-        <div className="text-xs text-gray-500 mt-1">最新 Health ステータス</div>
+        <div className="text-xs text-gray-500 mt-1">最新の健全性ステータス</div>
         {summary.latestHealthCheckAt && (
           <div className="text-xs text-gray-400 mt-1">
             {summary.latestHealthCheckAt.toLocaleString()}
