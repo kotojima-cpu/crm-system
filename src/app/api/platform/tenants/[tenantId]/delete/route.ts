@@ -1,69 +1,54 @@
 /**
- * POST /api/platform/tenants/[tenantId]/delete
- *
- * テナント論理削除（親管理者のみ）
+ * POST /api/platform/tenants/[tenantId]/delete — テナント論理削除
  */
+
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { Permission } from "@/auth/permissions";
+import { requirePlatformPermission } from "@/auth/guards";
+import { toErrorResponse, ValidationError } from "@/shared/errors";
 import { deleteTenant, validateTenantIdParam } from "@/features/platform-tenants";
-import { Permission, hasPermission } from "@/auth/permissions";
-import type { UserRole } from "@/auth/types";
-import { toActorUserId } from "@/shared/types/helpers";
 
-type Params = { params: Promise<{ tenantId: string }> };
+type RouteContext = { params: Promise<{ tenantId: string }> };
 
-export async function POST(request: NextRequest, { params }: Params) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
-    return NextResponse.json(
-      { error: { code: "UNAUTHORIZED", message: "認証が必要です" } },
-      { status: 401 },
-    );
-  }
-
-  // 親管理者のみ（TENANT_DELETE 権限）
-  if (!hasPermission(session.user.role as UserRole, Permission.TENANT_DELETE)) {
-    return NextResponse.json(
-      { error: { code: "FORBIDDEN", message: "この操作は親管理者のみ実行できます" } },
-      { status: 403 },
-    );
-  }
-
-  const { tenantId: tenantIdStr } = await params;
-  const tenantId = validateTenantIdParam(tenantIdStr);
-
-  let body: { reason?: string };
+export async function POST(request: NextRequest, context: RouteContext) {
   try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json(
-      { error: { code: "VALIDATION_ERROR", message: "リクエストが不正です" } },
-      { status: 400 },
-    );
-  }
+    const { tenantId: tenantIdStr } = await context.params;
+    const tenantId = validateTenantIdParam(tenantIdStr);
 
-  if (!body.reason || typeof body.reason !== "string" || body.reason.trim().length === 0) {
-    return NextResponse.json(
-      { error: { code: "VALIDATION_ERROR", message: "削除理由は必須です" } },
-      { status: 400 },
+    const { user, runInContext } = await requirePlatformPermission(
+      Permission.TENANT_DELETE,
+      request,
     );
-  }
 
-  try {
-    const result = await deleteTenant(
-      { actorUserId: toActorUserId(Number(session.user.id)), actorRole: session.user.role },
-      tenantId,
-      { reason: body.reason.trim() },
-    );
-    return NextResponse.json({ data: result });
-  } catch (err) {
-    if (err instanceof Error && err.message.includes("見つかりません")) {
+    return runInContext(async () => {
+      const body = await request.json();
+
+      if (!body.reason || typeof body.reason !== "string" || body.reason.trim().length === 0) {
+        throw new ValidationError("削除理由は必須です");
+      }
+
+      const tenant = await deleteTenant(
+        { actorUserId: user.id, actorRole: user.role },
+        tenantId,
+        { reason: body.reason.trim() },
+      );
+
+      return NextResponse.json({ data: tenant });
+    });
+  } catch (error) {
+    if (error instanceof ValidationError) {
+      return NextResponse.json(toErrorResponse(error), { status: 400 });
+    }
+    if (error && typeof error === "object" && "statusCode" in error) {
+      const appError = error as { statusCode: number };
       return NextResponse.json(
-        { error: { code: "NOT_FOUND", message: "テナントが見つかりません" } },
-        { status: 404 },
+        toErrorResponse(error as Parameters<typeof toErrorResponse>[0]),
+        { status: appError.statusCode },
       );
     }
-    throw err;
+    return NextResponse.json(
+      { error: { code: "INTERNAL_ERROR", message: "内部エラーが発生しました" } },
+      { status: 500 },
+    );
   }
 }
