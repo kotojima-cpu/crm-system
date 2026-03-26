@@ -2,8 +2,12 @@
 
 import { signIn } from "next-auth/react";
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 function LoginForm() {
+  const searchParams = useSearchParams();
+  const changed = searchParams.get("changed") === "1";
+  const reset = searchParams.get("reset") === "1";
   const [loginId, setLoginId] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -39,6 +43,18 @@ function LoginForm() {
           <h1 className="text-2xl font-bold text-gray-800">OAフロント</h1>
           <p className="text-sm text-gray-500 mt-1">管理システムのログイン画面になります</p>
         </div>
+
+        {changed && (
+          <p className="text-sm text-green-700 bg-green-50 p-3 rounded-md mb-4">
+            パスワードを変更しました。新しいパスワードでログインしてください。
+          </p>
+        )}
+
+        {reset && (
+          <p className="text-sm text-green-700 bg-green-50 p-3 rounded-md mb-4">
+            パスワードを再設定しました。新しいパスワードでログインしてください。
+          </p>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
@@ -91,12 +107,23 @@ function LoginForm() {
             {loading ? "ログイン中..." : "ログイン"}
           </button>
         </form>
-        <p className="text-xs text-gray-400 text-center mt-6">株式会社ITフロンティア</p>
+        <p className="text-center mt-4">
+          <a href="/forgot-password" className="text-xs text-blue-600 hover:underline">
+            パスワードを忘れた場合
+          </a>
+        </p>
+        <p className="text-xs text-gray-400 text-center mt-4">株式会社ITフロンティア</p>
       </div>
     </div>
   );
 }
 
+import { Suspense } from "react";
+
 export default function LoginPage() {
-  return <LoginForm />;
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
+  );
 }

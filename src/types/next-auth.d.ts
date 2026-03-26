@@ -11,6 +11,7 @@ declare module "next-auth" {
       tenantId?: string;
       tenantStatus?: string;
       authVersion?: number;
+      mustChangePassword?: boolean;
     };
   }
 }
@@ -24,5 +25,6 @@ declare module "next-auth/jwt" {
     tenantId?: string;
     tenantStatus?: string;
     authVersion?: number;
+    mustChangePassword?: boolean;
   }
 }

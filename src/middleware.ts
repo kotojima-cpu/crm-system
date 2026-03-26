@@ -15,6 +15,11 @@ export async function middleware(request: NextRequest) {
 
 
 
+  // 認証不要ページ（ログイン・パスワード再設定）
+  if (pathname === "/forgot-password" || pathname === "/reset-password") {
+    return NextResponse.next();
+  }
+
   // ログインページは未認証でもアクセス可
   if (pathname === "/login") {
     if (token) {
@@ -35,6 +40,14 @@ export async function middleware(request: NextRequest) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("callbackUrl", pathname);
     return NextResponse.redirect(loginUrl);
+  }
+
+  // 初回パスワード変更が必要なユーザーは /change-password 以外をブロック
+  if (token.mustChangePassword) {
+    if (pathname !== "/change-password" && !pathname.startsWith("/api/auth") && pathname !== "/api/change-password") {
+      return NextResponse.redirect(new URL("/change-password", request.url));
+    }
+    return NextResponse.next();
   }
 
   // /platform/users* と /platform/outbox* は platform_master のみ許可
