@@ -15,7 +15,8 @@ export type RuntimeEnvironment =
 /** インフラ実装モード */
 export type InfrastructureMode =
   | "local"
-  | "aws";
+  | "aws"
+  | "smtp";
 
 /**
  * 外部送信時に引き継ぐコンテキスト。

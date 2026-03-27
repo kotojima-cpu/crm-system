@@ -6,7 +6,7 @@
 
 - [ ] VPS 1台目 (アプリ用) の SSH ログインができる
 - [ ] VPS 2台目 (DB用) の SSH ログインができる
-- [ ] ドメイン `app.itf-oa.com` の DNS A レコードが VPS 1台目の IP を指している
+- [ ] ドメイン `app.itf-oa.jp` の DNS A レコードが VPS 1台目の IP を指している
 
 ---
 
@@ -116,7 +116,7 @@ curl -s http://127.0.0.1:3000/api/health
 sudo cp /opt/oa-system/deploy/sakura/nginx.conf.example \
         /etc/nginx/sites-available/oa-system
 
-# ドメイン名を実際の値に編集 (app.itf-oa.com の場合は変更不要)
+# ドメイン名を実際の値に編集 (app.itf-oa.jp の場合は変更不要)
 # sudo nano /etc/nginx/sites-available/oa-system
 
 # デフォルトサイトを無効化 (競合防止)
@@ -134,7 +134,7 @@ curl -s http://localhost/api/health
 
 # Let's Encrypt 証明書の取得 (certbot が HTTPS 設定を自動追記する)
 sudo apt install -y certbot python3-certbot-nginx
-sudo certbot --nginx -d app.itf-oa.com
+sudo certbot --nginx -d app.itf-oa.jp
 
 # certbot 完了後、nginx.conf.example 末尾のコメントにある
 # セキュリティヘッダーを HTTPS server ブロック内に追記する
@@ -180,7 +180,7 @@ sudo journalctl -u outbox-poll -n 20
 ## 動作確認
 
 - [ ] `curl -s http://127.0.0.1:3000/api/health` → `{"status":"ok"}` が返る
-- [ ] `https://app.itf-oa.com/login` がブラウザで表示される
+- [ ] `https://app.itf-oa.jp/login` がブラウザで表示される
 - [ ] ログインできる
 - [ ] `sudo journalctl -u outbox-poll -n 10` にエラーがない
 - [ ] `docker compose logs app` に `ERROR` がない

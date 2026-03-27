@@ -29,6 +29,7 @@ import type { MetricsPublisher } from "./metrics/interface";
 
 import { LocalMailer } from "./mail/local-mailer";
 import { SesMailer } from "./mail/ses-mailer";
+import { SmtpMailer } from "./mail/smtp-mailer";
 import { LocalQueue } from "./queue/local-queue";
 import { SqsQueue } from "./queue/sqs-queue";
 import { LocalWebhook } from "./webhook/local-webhook";
@@ -46,9 +47,10 @@ import { CloudWatchMetricsPublisher } from "./metrics/cloudwatch-metrics";
 
 /** Mailer を作成 */
 export function createMailer(): Mailer {
-  return getInfrastructureMode() === "aws"
-    ? new SesMailer()
-    : new LocalMailer();
+  const mode = getInfrastructureMode();
+  if (mode === "aws") return new SesMailer();
+  if (mode === "smtp") return new SmtpMailer();
+  return new LocalMailer();
 }
 
 /** QueuePublisher を作成 */

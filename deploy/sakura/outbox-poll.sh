@@ -9,7 +9,7 @@
 #   4. セッションクッキーを削除
 #
 # 必要な環境変数 (.env または systemd EnvironmentFile で設定):
-#   APP_URL             — アプリの URL (例: https://app.itf-oa.com)
+#   APP_URL             — アプリの URL (例: https://app.itf-oa.jp)
 #   OUTBOX_POLL_LOGIN_ID — platform_admin ロールを持つユーザーのログインID
 #   OUTBOX_POLL_PASSWORD — 上記ユーザーのパスワード
 #
@@ -21,7 +21,7 @@
 
 set -e
 
-APP_URL="${APP_URL:-https://app.itf-oa.com}"
+APP_URL="${APP_URL:-https://app.itf-oa.jp}"
 LOGIN_ID="${OUTBOX_POLL_LOGIN_ID}"
 PASSWORD="${OUTBOX_POLL_PASSWORD}"
 POLL_LIMIT="${OUTBOX_POLL_LIMIT:-50}"

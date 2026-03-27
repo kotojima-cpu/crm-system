@@ -32,7 +32,7 @@ export function getRuntimeEnvironment(): RuntimeEnvironment {
 /** インフラ実装モードを取得 */
 export function getInfrastructureMode(): InfrastructureMode {
   const mode = process.env.INFRASTRUCTURE_MODE ?? "local";
-  if (["local", "aws"].includes(mode)) {
+  if (["local", "aws", "smtp"].includes(mode)) {
     return mode as InfrastructureMode;
   }
   return "local";

@@ -24,7 +24,7 @@ openssl rand -base64 32
 |---|---|
 | `DATABASE_URL` | DB VPS の PostgreSQL 接続文字列 |
 | `NEXTAUTH_SECRET` | 上記コマンドの出力値 |
-| `NEXTAUTH_URL` | `https://app.itf-oa.com` (ドメインに合わせる) |
+| `NEXTAUTH_URL` | `https://app.itf-oa.jp` (ドメインに合わせる) |
 | `OUTBOX_POLL_LOGIN_ID` | platform_admin ユーザーのログインID (シード後に確認) |
 | `OUTBOX_POLL_PASSWORD` | platform_admin ユーザーのパスワード (シード後に確認) |
 
@@ -132,7 +132,7 @@ sudo ln -s /etc/nginx/sites-available/oa-system \
 sudo nginx -t && sudo systemctl reload nginx
 
 # HTTPS 証明書の取得
-sudo certbot --nginx -d app.itf-oa.com
+sudo certbot --nginx -d app.itf-oa.jp
 ```
 
 ---
@@ -219,8 +219,8 @@ sudo tail -f /var/log/nginx/oa-system-access.log
 
 ## 初回起動後の確認チェック
 
-- [ ] `https://app.itf-oa.com/api/health` → `{"status":"ok"}`
-- [ ] `https://app.itf-oa.com/login` がブラウザで表示される
+- [ ] `https://app.itf-oa.jp/api/health` → `{"status":"ok"}`
+- [ ] `https://app.itf-oa.jp/login` がブラウザで表示される
 - [ ] ログインできる
 - [ ] `sudo journalctl -u outbox-poll -n 5` に結果が出ている
 - [ ] `docker compose logs app` に `ERROR` がない

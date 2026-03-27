@@ -8,10 +8,10 @@
 |---|---|---|
 | `DATABASE_URL` | `postgresql://oa_user:【パスワード】@【DB VPS IP】:5432/oadb?sslmode=require` | DB VPS を構築後に確定 |
 | `NEXTAUTH_SECRET` | (ランダム文字列) | `openssl rand -base64 32` で生成 |
-| `NEXTAUTH_URL` | `https://app.itf-oa.com` | ドメインが確定したら設定 |
+| `NEXTAUTH_URL` | `https://app.itf-oa.jp` | ドメインが確定したら設定 |
 | `OUTBOX_POLL_LOGIN_ID` | `platform_admin` のログインID | 初期ユーザー作成後に確認 (first-boot.md 参照) |
 | `OUTBOX_POLL_PASSWORD` | `platform_admin` のパスワード | 初期ユーザー作成後に確認 (first-boot.md 参照) |
-| `APP_URL` | `https://app.itf-oa.com` | outbox-poll.sh がアクセスする URL |
+| `APP_URL` | `https://app.itf-oa.jp` | outbox-poll.sh がアクセスする URL |
 
 ---
 
@@ -77,5 +77,5 @@ LocalMailer.send() → ログ出力のみ (dry-run)
 | 変数名 | 値の例 | 用途 |
 |---|---|---|
 | `OUTBOX_ALERT_WEBHOOK_URL` | `https://hooks.example.com/alert` | dead イベント発生時の Webhook 通知 |
-| `OUTBOX_ALERT_EMAIL_TO` | `ops@itf-oa.com` | dead イベント発生時のメール通知 |
+| `OUTBOX_ALERT_EMAIL_TO` | `ops@itf-oa.jp` | dead イベント発生時のメール通知 |
 | `OUTBOX_POLL_LIMIT` | `50` | 1 回のポーリングで処理する最大件数 (デフォルト: 50) |

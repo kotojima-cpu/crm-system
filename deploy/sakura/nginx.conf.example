@@ -8,7 +8,7 @@
 #
 # 初回セットアップ手順:
 #   1. このファイルをそのまま配置して nginx -t && systemctl reload nginx
-#   2. sudo certbot --nginx -d app.itf-oa.com
+#   2. sudo certbot --nginx -d app.itf-oa.jp
 #      → certbot が自動で HTTPS リダイレクト・証明書パス・SSL 設定を追記する
 #   3. certbot 完了後、下記の「certbot 完了後に手動追加」セクションの
 #      セキュリティヘッダーを HTTPS server ブロック内に追記する
@@ -18,7 +18,7 @@
 server {
     listen 80;
     listen [::]:80;
-    server_name app.itf-oa.com;
+    server_name app.itf-oa.jp;
 
     # ----------------------------------------------------------
     # ログ

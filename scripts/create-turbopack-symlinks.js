@@ -21,6 +21,7 @@ const NODE_MODULES = path.join(__dirname, "..", "node_modules");
 const EXTERNAL_PACKAGES = [
   { pattern: /@prisma\/client-[a-f0-9]+/g, target: "@prisma/client", scoped: true },
   { pattern: /bcryptjs-[a-f0-9]+/g, target: "bcryptjs", scoped: false },
+  { pattern: /nodemailer-[a-f0-9]+/g, target: "nodemailer", scoped: false },
 ];
 
 function scanDir(dir) {
