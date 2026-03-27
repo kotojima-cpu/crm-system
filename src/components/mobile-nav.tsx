@@ -76,6 +76,11 @@ export function MobileNav({ userName, userRole, isPlatform, isMaster, isTenantAd
               </>
             )}
             <hr className="border-gray-200" />
+            <Link href="/profile" onClick={() => setOpen(false)}
+              className="block text-sm text-gray-700 hover:text-blue-600 py-2">
+              マイページ
+            </Link>
+            <hr className="border-gray-200" />
             <div className="flex items-center justify-between py-2">
               <span className="text-sm text-gray-600">
                 {userName}

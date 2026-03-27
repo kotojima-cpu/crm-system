@@ -67,11 +67,11 @@ export async function Header() {
         </div>
         {/* デスクトップユーザー情報 */}
         <div className="hidden md:flex items-center gap-4">
-          <span className="text-sm text-gray-600">
+          <Link href="/profile" className="text-sm text-gray-600 hover:text-blue-600 hover:underline">
             {session.user.name}
-            <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600">
-              {roleBadge}
-            </span>
+          </Link>
+          <span className="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600">
+            {roleBadge}
           </span>
           <SignOutButton />
         </div>
